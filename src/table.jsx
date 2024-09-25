@@ -253,7 +253,6 @@ function useDeleteUser() {
 const queryClient = new QueryClient();
 
 const ExampleWithProviders = () => (
-  //Put this with your other react-query providers near root of your app
   <QueryClientProvider client={queryClient}>
     <Table />
   </QueryClientProvider>
