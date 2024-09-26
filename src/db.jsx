@@ -2,7 +2,7 @@ import Dexie from "dexie";
 
 export const db = new Dexie("PhotoDatabase");
 db.version(1).stores({
-  photos: "++id, numb, photoNumb, copyOf, isCopyOf",
+  photos: "++id, &numb, photoNumb, copyOf, isCopyOf",
 });
 
 // Add a photo along with its details to the database
