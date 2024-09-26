@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
 
-}
+} from './'
 import {
   MaterialReactTable,
   useMaterialReactTable,
