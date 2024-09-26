@@ -12,7 +12,7 @@ export async function addPhoto(photo) {
       numb: photo.numb,
       photoNumb: photo.photoNumb,
       copyOf: photo.copyOf,
-      isCopyOf: photo.isCopyOf,
+      hasCopy: photo.hasCopy? "true" : "false",
       description: photo.description,
       image: photo.image,
     });
