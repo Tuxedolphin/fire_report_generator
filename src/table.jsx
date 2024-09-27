@@ -19,8 +19,28 @@ import {
   IconButton,
   Tooltip,
   Typography,
+  Dialog,
+  DialogTitle,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  TextField,
+  styled,
 } from '@mui/material';
-import { Edit, Delete } from '@mui/icons-material';
+import { Delete, Add, CloudUpload} from '@mui/icons-material';
+
+// Hidden Input For Adding Functionality To Some Buttons
+const VisuallyHiddenInput = styled('input')({
+  clip: 'rect(0 0 0 0)',
+  clipPath: 'inset(50%)',
+  height: 1,
+  overflow: 'hidden',
+  position: 'absolute',
+  bottom: 0,
+  left: 0,
+  whiteSpace: 'nowrap',
+  width: 1,
+});
 
 // Object to hold the required information of each photo
 function Photo(image, numb, photoNumb, description, id = -1, copyOf = null, hasCopy = false) { // Note that image is of type Image
@@ -44,8 +64,10 @@ const initData = [
 
 const Table = () => {
 
-  const [data, setData] = useState(() => initData);
-  const [editedRows, setEditedRows] = useState({});
+  const [data, setData] = useState(() => initData); // Holds data that is displayed
+  const [editedRows, setEditedRows] = useState({}); // Holds the rows which were changed
+  const [openAddForm, setOpenAddForm] = useState(true); // Holds if add photo form should be opened
+  const [openCopyForm, setOpenCopyForm] = useState(false); // Holds if copy photo form should be opened
 
   const columns = useMemo(
     () => [
@@ -88,6 +110,10 @@ const Table = () => {
   }
 
   const createEntry = async () => {
+
+  }
+
+  const createCopy = async (image) => {
 
   }
 
@@ -140,10 +166,10 @@ const Table = () => {
     }),
     onCreatingRowSave: createEntry,
     renderRowActionMenuItems: ({ row, table }) => [
-      <MRT_ActionMenuItem //or just use a normal MUI MenuItem component
-        icon={<Edit />}
-        key="edit"
-        label="Edit"
+      <MRT_ActionMenuItem
+        icon={<Add />}
+        key="add"
+        label="Create Copy"
         onClick={() => console.info('Edit')}
         table={table}
       />,
@@ -151,7 +177,7 @@ const Table = () => {
         icon={<Delete />}
         key="delete"
         label="Delete"
-        onClick={() => console.info('Delete')}
+        onClick={openDeleteConfirmModal}
         table={table}
       />,
     ],
@@ -171,7 +197,7 @@ const Table = () => {
       <Button
         variant="contained"
         onClick={() => {
-          table.setCreatingRow(true); 
+          table.setCreatingRow(true);
         }}
       >
         Upload Photo
@@ -208,7 +234,133 @@ const Table = () => {
       ) : null,
   });
 
-  return <MaterialReactTable table={table} />;
+  // Modals for data entry
+  function AddPhotoForm() {
+
+    const [status, setStatus] = useState('test');
+    const [validFile, setValidFile] = useState('');
+    const [disableButton, setDisableButton] = useState(false);
+    const [fileUploaded, setFileUploaded] = useState(true);
+
+    const checkFileValidity = (file) => {
+
+      if (!file) {
+        setValidFile('error');
+        setStatus('File could not be uploaded.')
+        setDisableButton(true);
+      }
+
+      let parts = file['name'].split('.');
+      let result = ['jpeg', 'jpg', 'png', 'raw', 'heic'].indexOf(parts[parts.length - 1]);
+
+      if (result < 0) {
+        setValidFile('error');
+        setStatus(`File "${file['name']}" has invalid file format.`);
+        setDisableButton(true);
+        return false;
+      } else {
+        setValidFile('success');
+        setStatus(`File "${file['name']}" uploaded`);
+        setDisableButton(false);
+        return true;
+      }
+
+    }
+
+    const handleFile = (file) => {
+      if (!checkFileValidity(file)) {
+        return;
+      }
+      setFileUploaded(true);
+    }
+
+    const handleClose = (input) => {
+      // setData([...data, input]);
+      setOpenAddForm(false);
+    }
+
+    return (
+      <Dialog
+        open={openAddForm}
+        onClose={handleClose}
+        PaperProps={{
+          component: 'form',
+          onSubmit: (event) => {
+            event.preventDefault();
+            const formData = new FormData(event.currentTarget);
+            const data = Object.fromEntries(formData.entries());
+            console.log(formData);
+            console.log(data);
+          },
+        }}
+        fullWidth
+      >
+        <DialogTitle>Add Photo</DialogTitle>
+        <DialogContent>
+          <TextField 
+            id='photoNumb'
+            required
+            margin='dense'
+            label='Photo Number'
+            variant='standard'
+            type='text'
+            fullWidth
+          />
+          <TextField 
+            id='description'
+            required
+            margin='dense'
+            label='Description'
+            variant='standard'
+            type='text'
+            fullWidth
+            multiline
+          />
+          <Button
+            component="label"
+            role={undefined}
+            variant="contained"
+            tabIndex={-1}
+            startIcon={<CloudUpload />}
+            sx={{ marginTop: '8px', marginBottom: '4px' }}
+          >
+            Upload file
+            <VisuallyHiddenInput
+              type="file"
+              onChange={(event) => {
+                try {
+                console.log(event.target.files[0])
+                handleFile(event.target.files[0])
+                } catch (error) {
+                  console.log(error);
+                  handleFile(null);
+                }
+              }}
+            />
+          </Button>
+          {fileUploaded && (
+            <Typography color={validFile}> {status} </Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClose}>Cancel</Button>
+          <Button type="submit" disabled={disableButton}>Submit</Button>
+        </DialogActions>
+      </Dialog>
+    )
+  }
+
+  function AddCopyForm() {
+
+  }
+
+  return (
+    <>
+      <MaterialReactTable table={table} />
+      <AddPhotoForm />
+      <AddCopyForm />
+    </>
+  )
 };
 
 // Saves the rows into the database
