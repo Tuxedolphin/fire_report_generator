@@ -2,19 +2,19 @@ import Dexie from "dexie";
 
 export const db = new Dexie("PhotoDatabase");
 db.version(1).stores({
-  photos: "++id, &numb, photoNumb, copyOf, isCopyOf",
+  photos: "++id, numb, photoNumb",
 });
 
 // Add a photo along with its details to the database
-export async function addPhoto(photo) {
+export function addPhoto(photo) {
   try {
-    return await db.photos.add({
+    return db.photos.add({
       numb: photo.numb,
       photoNumb: photo.photoNumb,
       copyOf: photo.copyOf,
-      hasCopy: photo.hasCopy? "true" : "false",
+      hasCopy: photo.hasCopy ? "true" : "false",
       description: photo.description,
-      image: photo.image,
+      image: photo.image.url,
     });
   } catch (error) {
     console.log(error);
@@ -31,7 +31,6 @@ export async function updatePhoto(id, photo) {
       copyOf: photo.copyOf,
       isCopyOf: photo.isCopyOf,
       description: photo.description,
-      image: photo.image,
     });
 
     if (status > 0) {
@@ -81,10 +80,5 @@ export async function retrievePhoto(id) {
 
 // Retrieves all the photos in the database
 export async function retrieveAll() {
-  try {
-    return await db.photos.toArray();
-  } catch (error) {
-    console.log(error);
-    return null;
-  }
+  return await db.photos.toArray();
 }

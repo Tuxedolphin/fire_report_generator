@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import {
   addPhoto,
   updatePhoto,
@@ -27,7 +27,7 @@ import {
   TextField,
   styled,
 } from '@mui/material';
-import { Delete, Add, CloudUpload} from '@mui/icons-material';
+import { Delete, Add, CloudUpload } from '@mui/icons-material';
 
 // Hidden Input For Adding Functionality To Some Buttons
 const VisuallyHiddenInput = styled('input')({
@@ -43,31 +43,33 @@ const VisuallyHiddenInput = styled('input')({
 });
 
 // Object to hold the required information of each photo
-function Photo(image, numb, photoNumb, description, id = -1, copyOf = null, hasCopy = false) { // Note that image is of type Image
+function Photo(image, numb, photoNumb, description, id = -1, copyOf = null, hasCopy = "false") { // Note that image is of type Image
   this.id = id;
-  this.image = image;
-  this.url = image.src = URL.createObjectURL(image);
-  this.orientation = (image.width > image.height ? "landscape" : "portrait");
-  this.numb = numb;
-  this.photoNumb = photoNumb;
+  this.image = new Image();
+  this.image.url = URL.createObjectURL(image);
+  this.image.onload = function() {
+    this.orientation = ((this.image.width > this.image.height) ? "landscape" : "portrait");
+    console.log(this.image.width + this.image.height);
+  }
+  this.numb = numb.toString();
+  this.photoNumb = photoNumb.toString();
   this.description = description;
   this.copyOf = copyOf;
   this.hasCopy = hasCopy;
 }
 
-const initData = [
-  {numb: '1', photoNumb: 2, description: 'blah', id: 2},
-  {numb: 'Copy of 1', photoNumb: 2, description: 'blah', id: 3},
-  {numb: '2', photoNumb: 24, description: 'blah blah', id: 4},
-  {numb: '3', photoNumb: 3, description: 'blah blah blah', id: 5}
-];
 
 const Table = () => {
 
-  const [data, setData] = useState(() => initData); // Holds data that is displayed
+  const [data, setData] = useState([]);
+  useEffect(() => {
+    retrieveAll().then(items => setData(items));
+  }, []);
+  
   const [editedRows, setEditedRows] = useState({}); // Holds the rows which were changed
-  const [openAddForm, setOpenAddForm] = useState(true); // Holds if add photo form should be opened
-  const [openCopyForm, setOpenCopyForm] = useState(false); // Holds if copy photo form should be opened
+  const [openAddForm, setOpenAddForm] = useState(false); // Holds if add photo form should be opened
+
+  console.log(data);
 
   const columns = useMemo(
     () => [
@@ -109,12 +111,22 @@ const Table = () => {
     setEditedRows({});
   }
 
-  const createEntry = async () => {
+  const createCopy = (image) => {
+    
+    console.log(image);
+    let newCopy = { ...image, copyOf: image.id, numb: `Copy of ${image.numb}`, description: ''};
+    newCopy.copyOf = image.id;
+    // newCopy.id = addPhoto(newCopy);
 
-  }
+    const originalIndex = data.indexOf(image);
 
-  const createCopy = async (image) => {
+    let newData = (data);
+    newData[originalIndex].hasCopy = "true";
 
+    newData.splice(originalIndex + 1, 0, newCopy);
+    console.log(newData)
+
+    setData(newData);
   }
 
   const openDeleteConfirmModal = (row) => {
@@ -142,7 +154,7 @@ const Table = () => {
       onDragEnd: () => {
         const { draggingRow, hoveredRow } = table.getState();
         if (hoveredRow && draggingRow) {
-          let newData = structuredClone(data);
+          let newData = (data);
           newData.splice(
             hoveredRow.index, 0, newData.splice(draggingRow.index, 1)[0]
           );
@@ -151,26 +163,29 @@ const Table = () => {
           let b = data[draggingRow.index].numb;
 
           // Updating the picture order numbers
+          let wasCopy = false;
           for (let i = Math.min(a, b) - 1; i < Math.max(a, b); i++) {
-            console.log(newData[i].numb.trim);
-            if (newData[i].numb.trim[0].lower() === 'c') {
+            console.log(newData[i].numb[0])
+            if (newData[i].numb[0].toLowerCase() === 'c' && !wasCopy) {
               newData[i].numb = `Copy of Photo ${i}` // TODO: Fix bug for not changing row number
               i--;
+              wasCopy = true;
             } else {
               newData[i].numb = i + 1;
+              wasCopy = false;
             }
           }
           setData([...newData]);
         }
       },
     }),
-    onCreatingRowSave: createEntry,
     renderRowActionMenuItems: ({ row, table }) => [
       <MRT_ActionMenuItem
         icon={<Add />}
         key="add"
         label="Create Copy"
-        onClick={() => console.info('Edit')}
+        onClick={() => {
+          createCopy(row.original)}}
         table={table}
       />,
       <MRT_ActionMenuItem
@@ -193,11 +208,11 @@ const Table = () => {
         </Button>
       </Box>
     ),
-    renderTopToolbarCustomActions: ({ table }) => (
+    renderTopToolbarCustomActions: () => (
       <Button
         variant="contained"
         onClick={() => {
-          table.setCreatingRow(true);
+          setOpenAddForm(true);
         }}
       >
         Upload Photo
@@ -237,10 +252,10 @@ const Table = () => {
   // Modals for data entry
   function AddPhotoForm() {
 
-    const [status, setStatus] = useState('test');
+    const [photo, setPhoto] = useState(new File([""], "empty"));
+    const [status, setStatus] = useState('');
     const [validFile, setValidFile] = useState('');
-    const [disableButton, setDisableButton] = useState(false);
-    const [fileUploaded, setFileUploaded] = useState(true);
+    const [disableButton, setDisableButton] = useState(true);
 
     const checkFileValidity = (file) => {
 
@@ -271,11 +286,15 @@ const Table = () => {
       if (!checkFileValidity(file)) {
         return;
       }
-      setFileUploaded(true);
+
+      setPhoto(file);
     }
 
-    const handleClose = (input) => {
-      // setData([...data, input]);
+    const handleClose = () => {
+      setPhoto(new File([''], 'empty'));
+      setDisableButton(true);
+      setStatus('');
+      setValidFile('');
       setOpenAddForm(false);
     }
 
@@ -288,31 +307,45 @@ const Table = () => {
           onSubmit: (event) => {
             event.preventDefault();
             const formData = new FormData(event.currentTarget);
-            const data = Object.fromEntries(formData.entries());
-            console.log(formData);
+            const newData = Object.fromEntries(formData.entries());
+            
             console.log(data);
+
+            const currentNumb = (data.length === 0) ? 0 : data.at(-1).numb.slice(-1);
+
+            let newPhoto = new Photo(photo, +currentNumb + 1, newData.photoNumb, newData.description);
+            console.log(newPhoto);
+            addPhoto(newPhoto);
+            setData([...data, newPhoto]);
+
+            handleClose();
           },
         }}
         fullWidth
       >
         <DialogTitle>Add Photo</DialogTitle>
         <DialogContent>
-          <TextField 
+          <TextField
+            autoFocus
             id='photoNumb'
+            name='photoNumb'
             required
             margin='dense'
             label='Photo Number'
             variant='standard'
             type='text'
+            autoComplete='off'
             fullWidth
           />
           <TextField 
             id='description'
+            name='description'
             required
             margin='dense'
             label='Description'
             variant='standard'
             type='text'
+            autoComplete='off'
             fullWidth
             multiline
           />
@@ -338,9 +371,7 @@ const Table = () => {
               }}
             />
           </Button>
-          {fileUploaded && (
-            <Typography color={validFile}> {status} </Typography>
-          )}
+          <Typography color={validFile}> {status} </Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>Cancel</Button>
