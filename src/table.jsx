@@ -48,7 +48,7 @@ function Photo(image, numb, photoNumb, description, id = -1, copyOf = null, hasC
   this.image = new Image();
   this.image.url = URL.createObjectURL(image);
   this.image.onload = function() {
-    this.orientation = ((this.image.width > this.image.height) ? "landscape" : "portrait");
+    this.orientation = ((this.image.width > this.image.height) ? "landscape" : "portrait"); // TODO: Check if working
     console.log(this.image.width + this.image.height);
   }
   this.numb = numb.toString();
@@ -56,6 +56,7 @@ function Photo(image, numb, photoNumb, description, id = -1, copyOf = null, hasC
   this.description = description;
   this.copyOf = copyOf;
   this.hasCopy = hasCopy;
+  this.blob = new Blob([image]);
 }
 
 
@@ -63,13 +64,14 @@ const Table = () => {
 
   const [data, setData] = useState([]);
   useEffect(() => {
-    retrieveAll().then(items => setData(items));
+    retrieveAll().then((items) => setData(items.map((entry) => {
+      return new Photo(entry.image, entry.numb, entry.photoNumb, entry.description, entry.id, entry.copyOf, entry.hasCopy);
+    })));
   }, []);
   
   const [editedRows, setEditedRows] = useState({}); // Holds the rows which were changed
   const [openAddForm, setOpenAddForm] = useState(false); // Holds if add photo form should be opened
 
-  console.log(data);
 
   const columns = useMemo(
     () => [
@@ -131,8 +133,17 @@ const Table = () => {
 
   const openDeleteConfirmModal = (row) => {
     if (window.confirm('Are you sure you want to delete this user?')) {
-      deletePhoto(); 
+      deletePhoto(row.original.id);
+
+      let newData = data.filter((photo) => {photo !== row.original});
+      
+      // for (let i = data.indexOf(row.original); i < newData.length; i++) {
+
+      // }
+
+      setData();
     }
+
   };
 
   const table = useMaterialReactTable({
@@ -192,7 +203,7 @@ const Table = () => {
         icon={<Delete />}
         key="delete"
         label="Delete"
-        onClick={openDeleteConfirmModal}
+        onClick={() => openDeleteConfirmModal(row)}
         table={table}
       />,
     ],
@@ -244,7 +255,7 @@ const Table = () => {
             width: '100%',
           }}
         >
-          <img src='https://www.elegantthemes.com/blog/wp-content/uploads/2015/02/custom-trackable-short-url-feature.png'></img>
+          <img src={URL.createObjectURL(row.original.blob)}></img>
         </Box>
       ) : null,
   });
@@ -397,10 +408,6 @@ const Table = () => {
 // Saves the rows into the database
 function updatePictures(row) {
   
-}
-
-function deletePicture() {
-
 }
 
 export default Table;

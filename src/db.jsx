@@ -12,9 +12,9 @@ export function addPhoto(photo) {
       numb: photo.numb,
       photoNumb: photo.photoNumb,
       copyOf: photo.copyOf,
-      hasCopy: photo.hasCopy ? "true" : "false",
+      hasCopy: "false",
       description: photo.description,
-      image: photo.image.url,
+      image: photo.blob,
     });
   } catch (error) {
     console.log(error);
