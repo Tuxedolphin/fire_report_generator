@@ -121,13 +121,30 @@ const Table = () => {
     [editedRows],
   );
 
-  const handleSave = async () => {
-    await updatePictures((editedRows)); 
-    setEditedRows({});
+  const handleSave = () => {
+
+    // Convert the array to an object for easy access of the ID
+    const hashedData = new Map();
+    
+    data.forEach((value) => {
+      hashedData.set(value.id, value);
+    });
+
+    for (const [id, photo] of Object.entries(editedRows)) {
+      if (hashedData.get(id) !== photo) {
+        updatePhoto(photo).then((success) => {
+          if (success) {
+            setEditedRows({});
+          } else {
+            console.log(`Failure to update photos, array given by:`);
+            console.log(editedRows);
+          }
+        });
+      }
+    }
   }
 
   const createCopy = (image) => {
-    
     
     let newCopy = image.createCopy();
     addPhoto(newCopy).then((newId) => {
@@ -434,10 +451,5 @@ const Table = () => {
     </>
   )
 };
-
-// Saves the rows into the database
-function updatePictures(row) {
-  
-}
 
 export default Table;
