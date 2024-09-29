@@ -9,10 +9,10 @@ db.version(1).stores({
 export function addPhoto(photo) {
   try {
     return db.photos.add({
-      numb: photo.numb,
+      numb: photo._numb,
       photoNumb: photo.photoNumb,
       copyOf: photo.copyOf,
-      hasCopy: "false",
+      hasCopy: null,
       description: photo.description,
       image: photo.blob,
     });
@@ -23,10 +23,11 @@ export function addPhoto(photo) {
 }
 
 // Updates a photo
-export async function updatePhoto(id, photo) {
+export async function updatePhoto(photo) {
+
   try {
-    const status = await db.photos.update(id, {
-      numb: photo.numb,
+    const status = await db.photos.update(photo.id, {
+      numb: photo._numb,
       photoNumb: photo.photoNumb,
       copyOf: photo.copyOf,
       isCopyOf: photo.isCopyOf,
@@ -37,7 +38,7 @@ export async function updatePhoto(id, photo) {
       return status;
     } else {
       console.log(
-        `No photo updated with id ${id} for photo ${photo.photoNumb}`
+        `No photo updated with id ${photo.id} for photo ${photo.photoNumb}`
       );
       return 0;
     }

@@ -43,7 +43,7 @@ const VisuallyHiddenInput = styled('input')({
 });
 
 // Object to hold the required information of each photo
-function Photo(image, numb, photoNumb, description, id = -1, copyOf = null, hasCopy = "false") { // Note that image is of type Image
+function Photo(image, numb, photoNumb, description, id = -1, copyOf = null, hasCopy = null) { // Note that image is of type File
   this.id = id;
   this.image = new Image();
   this.image.url = URL.createObjectURL(image);
@@ -51,12 +51,25 @@ function Photo(image, numb, photoNumb, description, id = -1, copyOf = null, hasC
     this.orientation = ((this.image.width > this.image.height) ? "landscape" : "portrait"); // TODO: Check if working
     console.log(this.image.width + this.image.height);
   }
-  this.numb = numb.toString();
   this.photoNumb = photoNumb.toString();
   this.description = description;
   this.copyOf = copyOf;
   this.hasCopy = hasCopy;
   this.blob = new Blob([image]);
+
+  this._numb = (copyOf ? 'Copy of ' : '') + numb.toString();
+  
+  this.updateNumb = (newNumb) => {
+    this._numb = (this.copyOf ? 'Copy of ' : '') + newNumb.toString();
+  }
+
+  this.createPureCopy = () => {
+    return new Photo(this.image, this._numb, this.photoNumb, this.description, this.id, this.copyOf, this.hasCopy);
+  }
+
+  this.createCopy = () => {
+    return new Photo(this.blob, this._numb, this.photoNumb, '', -1, this.id);
+  }
 }
 
 
@@ -76,7 +89,7 @@ const Table = () => {
   const columns = useMemo(
     () => [
       {
-        accessorKey: 'numb',
+        accessorKey: '_numb',
         header: '#',
         enableEditing: false,
       },
@@ -115,33 +128,48 @@ const Table = () => {
 
   const createCopy = (image) => {
     
-    console.log(image);
-    let newCopy = { ...image, copyOf: image.id, numb: `Copy of ${image.numb}`, description: ''};
-    newCopy.copyOf = image.id;
-    // newCopy.id = addPhoto(newCopy);
+    
+    let newCopy = image.createCopy();
+    addPhoto(newCopy).then((newId) => {
+      newCopy.id = newId;
 
-    const originalIndex = data.indexOf(image);
+      const originalIndex = data.indexOf(image);
 
-    let newData = (data);
-    newData[originalIndex].hasCopy = "true";
+      let newData = [...data];
+      newData[originalIndex].hasCopy = newId;
+      updatePhoto(newData[originalIndex]);
 
-    newData.splice(originalIndex + 1, 0, newCopy);
-    console.log(newData)
+      newData.splice(originalIndex + 1, 0, newCopy);
 
-    setData(newData);
+      setData(newData);
+
+    });
   }
 
   const openDeleteConfirmModal = (row) => {
     if (window.confirm('Are you sure you want to delete this user?')) {
+      if (row.original.hasCopy) {
+        deletePhoto(row.original.hasCopy);
+      }
       deletePhoto(row.original.id);
 
       let newData = data.filter((photo) => {photo !== row.original});
+      let wasCopy = false; // To keep track of if the previous photo was a copy - prevent infinite loop
       
-      // for (let i = data.indexOf(row.original); i < newData.length; i++) {
+      for (let i = data.indexOf(row.original); i < newData.length; i++) {
+        if (newData[i].copyOf && !wasCopy) {
+          newData[i].updateNumb(i);
+          i--;
+          wasCopy = true;
+        }
 
-      // }
+        else {
+          newData[i].updateNumb(i + 1);
+          wasCopy = false;
+        }
+      }
 
-      setData();
+      setData(newData);
     }
 
   };
@@ -160,14 +188,22 @@ const Table = () => {
       columnPinning: { right: ['mrt-row-actions'] },
     },
     muiRowDragHandleProps: ({ table }) => ({
-
-      // TODO: Check if it is a copy and if so, move the other one as well
       onDragEnd: () => {
         const { draggingRow, hoveredRow } = table.getState();
         if (hoveredRow && draggingRow) {
           let newData = (data);
+          let numbRowMove = 1;
+          // If it has a copy, need to move the very next object as well.
+          if (data[draggingRow.index].hasCopy) {
+            numbRowMove = 2;
+          }
+          // If it has a copy, need to move the previous object as well.
+          else if (data[draggingRow.index].copyOf) {
+            numbRowMove = 2;
+            draggingRow.index -= 1;
+          }
           newData.splice(
-            hoveredRow.index, 0, newData.splice(draggingRow.index, 1)[0]
+            hoveredRow.index, 0, ...newData.splice(draggingRow.index, numbRowMove)
           );
 
           let a = data[hoveredRow.index].numb;
@@ -176,13 +212,12 @@ const Table = () => {
           // Updating the picture order numbers
           let wasCopy = false;
           for (let i = Math.min(a, b) - 1; i < Math.max(a, b); i++) {
-            console.log(newData[i].numb[0])
             if (newData[i].numb[0].toLowerCase() === 'c' && !wasCopy) {
-              newData[i].numb = `Copy of Photo ${i}` // TODO: Fix bug for not changing row number
+              newData[i].updateNumb(i);
               i--;
               wasCopy = true;
             } else {
-              newData[i].numb = i + 1;
+              newData[i].updateNumb(i + 1);
               wasCopy = false;
             }
           }
@@ -255,7 +290,7 @@ const Table = () => {
             width: '100%',
           }}
         >
-          <img src={URL.createObjectURL(row.original.blob)}></img>
+          <img src={URL.createObjectURL(row.original.blob) }></img>
         </Box>
       ) : null,
   });
@@ -322,11 +357,11 @@ const Table = () => {
             
             console.log(data);
 
-            const currentNumb = (data.length === 0) ? 0 : data.at(-1).numb.slice(-1);
+            const currentNumb = (data.length === 0) ? 0 : data.at(-1)._numb.slice(-1);
 
             let newPhoto = new Photo(photo, +currentNumb + 1, newData.photoNumb, newData.description);
             console.log(newPhoto);
-            addPhoto(newPhoto);
+            newPhoto.id = addPhoto(newPhoto);
             setData([...data, newPhoto]);
 
             handleClose();
@@ -392,15 +427,10 @@ const Table = () => {
     )
   }
 
-  function AddCopyForm() {
-
-  }
-
   return (
     <>
       <MaterialReactTable table={table} />
       <AddPhotoForm />
-      <AddCopyForm />
     </>
   )
 };
