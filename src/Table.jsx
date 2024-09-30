@@ -119,7 +119,7 @@ const Table = () => {
             console.log(editedRows[cell.column.id]);
             console.log({...data[row.original.id], [cell.column.id]: event.target.value})
             setEditedRows({ ...editedRows, [row.original.id]: {...data[row.original.id], [cell.column.id]: event.target.value}});
-            console.log(editedRows); // TODO: Fix not updating bug
+            console.log(editedRows); // BUG: value of updating rows not updating correctly
           }
         }),
       },
@@ -127,8 +127,7 @@ const Table = () => {
     [editedRows, data],
   );
 
-
-
+  // Saves the data in the data array into IndexedDB
   const handleSave = () => {
 
     console.log(data);
@@ -155,6 +154,7 @@ const Table = () => {
     }
   }
 
+  // Handles what happens when the create copy button is clicked
   const createCopy = (image) => {
     
     let newCopy = image.createCopy();
@@ -176,8 +176,10 @@ const Table = () => {
     });
   }
 
+  // Opens the delete modal, then handles the deletion of a photo
   const openDeleteConfirmModal = (row) => {
     if (window.confirm('Are you sure you want to delete this user?')) {
+      // If it has a copy, the copy needs to be deleted as well
       if (row.original.hasCopy) {
         deletePhoto(row.original.hasCopy);
       }
@@ -198,7 +200,6 @@ const Table = () => {
           wasCopy = false;
         }
       }
-
       setData(newData);
     }
   };
@@ -279,7 +280,7 @@ const Table = () => {
           onClick={() => {
             console.log(data);
             console.log(editedRows);
-            // handleSave()
+            handleSave()
           }}
           disabled={Object.keys(editedRows).length === 0}
         >
