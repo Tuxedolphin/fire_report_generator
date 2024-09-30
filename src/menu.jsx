@@ -39,7 +39,7 @@ function Menu() {
             variant='standard'
             fullWidth
             required
-            defaultValue={incNumb}
+            value={incNumb}
             onBlur={(event) => {saveInput(event)}}
           />
         </Grid>
@@ -49,7 +49,7 @@ function Menu() {
           label='Evidence Bag Number'
           variant='standard'
           fullWidth
-          defaultValue={bagNumb}
+          value={bagNumb}
           onBlur={(event) => {saveInput(event)}}
           />
         </Grid>
@@ -61,7 +61,7 @@ function Menu() {
               checked={c1acc}
               onChange={() => {
                 setC1acc(!c1acc);
-                localStorage.setItem('c1acc', JSON.stringify(c1acc));
+                localStorage.setItem('c1acc', JSON.stringify(!c1acc));
               }}
             />
             <Typography>Full Report</Typography>
@@ -74,7 +74,7 @@ function Menu() {
           variant='standard' 
           fullWidth 
           required
-          defaultValue={location}
+          value={location}
           onBlur={(event) => {saveInput(event)}}
           />
         </Grid>
@@ -85,7 +85,7 @@ function Menu() {
             variant='standard'
             fullWidth
             required
-            defaultValue={postalCode}
+            value={postalCode}
             slotProps={{
               input: {
                 startAdornment: <InputAdornment position="start">Singapore</InputAdornment>,
