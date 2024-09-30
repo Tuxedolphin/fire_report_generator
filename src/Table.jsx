@@ -57,10 +57,11 @@ function Photo(image, numb, photoNumb, description, id = -1, copyOf = null, hasC
   this.hasCopy = hasCopy;
   this.blob = new Blob([image]);
 
-  this._numb = (copyOf ? 'Copy of ' : '') + numb.toString();
+  this._numb = numb;
+  this.displayedNumb = (copyOf ? 'Copy of ' : '') + numb.toString();
   
   this.updateNumb = (newNumb) => {
-    this._numb = (this.copyOf ? 'Copy of ' : '') + newNumb.toString();
+    this.displayedNumb = (this.copyOf ? 'Copy of ' : '') + newNumb.toString();
   }
 
   this.createPureCopy = () => {
@@ -89,7 +90,7 @@ const Table = () => {
   const columns = useMemo(
     () => [
       {
-        accessorKey: '_numb',
+        accessorKey: 'displayedNumb',
         header: '#',
         enableEditing: false,
       },
@@ -121,13 +122,32 @@ const Table = () => {
     [editedRows],
   );
 
-  const handleSave = async () => {
-    console.log(editedRows);
-    setEditedRows({});
+
+
+  const handleSave = () => {
+
+    // Convert the array to an object for easy access of the ID
+    const hashedData = new Map();
+    
+    data.forEach((value) => {
+      hashedData.set(value.id, value);
+    });
+
+    for (const [id, photo] of Object.entries(editedRows)) {
+      if (hashedData.get(id) !== photo) {
+        updatePhoto(photo).then((success) => {
+          if (success) {
+            setEditedRows({});
+          } else {
+            console.log(`Failure to update photos, array given by:`);
+            console.log(editedRows);
+          }
+        });
+      }
+    }
   }
 
   const createCopy = (image) => {
-    
     
     let newCopy = image.createCopy();
     addPhoto(newCopy).then((newId) => {
