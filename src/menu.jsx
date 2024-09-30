@@ -20,11 +20,13 @@ function Menu() {
   const [c1acc, setC1acc] = useState(false);
 
   useEffect(() => {
-    setIncNumber(localStorage.getItem('incidentNumb'));
-    setBagNumber(localStorage.getItem('bagNumb'));
-    setLocation(localStorage.getItem('location'));
-    setPostalCode(localStorage.getItem('postalCode'));
-    setC1acc(JSON.parse(localStorage.getItem('c1acc')));
+    
+    // Need to make sure they are not null
+    setIncNumber(localStorage.getItem('incidentNumb') ? localStorage.getItem('incidentNumb') : '');
+    setBagNumber(localStorage.getItem('bagNumb') ? localStorage.getItem('bagNumb') : '');
+    setLocation(localStorage.getItem('location') ? localStorage.getItem('location') : '');
+    setPostalCode(localStorage.getItem('postalCode') ? localStorage.getItem('postalCode') : '');
+    setC1acc((JSON.parse(localStorage.getItem('c1acc') === null)) ? false : JSON.parse(localStorage.getItem('c1acc')));
   }, [])
 
 
@@ -40,6 +42,7 @@ function Menu() {
             fullWidth
             required
             value={incNumb}
+            onChange={(event) => {setIncNumber(event.target.value)}}
             onBlur={(event) => {saveInput(event)}}
           />
         </Grid>
@@ -50,6 +53,7 @@ function Menu() {
           variant='standard'
           fullWidth
           value={bagNumb}
+          onChange={(event) => {setBagNumber(event.target.value)}}
           onBlur={(event) => {saveInput(event)}}
           />
         </Grid>
@@ -75,6 +79,7 @@ function Menu() {
           fullWidth 
           required
           value={location}
+          onChange={(event) => {setLocation(event.target.value)}}
           onBlur={(event) => {saveInput(event)}}
           />
         </Grid>
@@ -91,6 +96,7 @@ function Menu() {
                 startAdornment: <InputAdornment position="start">Singapore</InputAdornment>,
               },
             }}
+            onChange={(event) => {setPostalCode(event.target.value)}}
             onBlur={(event) => {saveInput(event)}}
             />
         </Grid>
