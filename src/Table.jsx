@@ -28,6 +28,7 @@ import {
   styled,
 } from '@mui/material';
 import { Delete, Add, CloudUpload } from '@mui/icons-material';
+import generateReport from './generateReport.jsx';
 
 // Hidden Input For Adding Functionality To Some Buttons
 const VisuallyHiddenInput = styled('input')({
@@ -97,12 +98,12 @@ const Table = () => {
       {
         accessorKey: 'photoNumb',
         header: 'Photo Number',
-        muiEditTextFieldProps: ({ row }) => ({
+        muiEditTextFieldProps: ({ cell, row }) => ({
           type: 'text',
           required: true,
-          onBlur: () => {
-            setEditedRows({ ...editedRows, [row.original.id]: row.original});
-            console.log(row);
+          onBlur: (event) => {
+            setEditedRows({ ...editedRows, [row.original.id]: {...data[row.original.id], [cell.column.id]: event.target.value}});
+            console.log(editedRows);
           }
         }),
       },
@@ -110,21 +111,28 @@ const Table = () => {
         accessorKey: 'description',
         header: 'Description',
         size: 400,
-        muiEditTextFieldProps: ({ row }) => ({
+        muiEditTextFieldProps: ({ cell, row }) => ({
           type: 'text',
           required: true,
-          onBlur: () => {
-            setEditedRows({ ...editedRows, [row.original.id]: row.original});
+          onBlur: (event) => {
+            console.log(editedRows);
+            console.log(editedRows[cell.column.id]);
+            console.log({...data[row.original.id], [cell.column.id]: event.target.value})
+            setEditedRows({ ...editedRows, [row.original.id]: {...data[row.original.id], [cell.column.id]: event.target.value}});
+            console.log(editedRows); // TODO: Fix not updating bug
           }
         }),
       },
     ],
-    [editedRows],
+    [editedRows, data],
   );
 
 
 
   const handleSave = () => {
+
+    console.log(data);
+    console.log(editedRows);
 
     // Convert the array to an object for easy access of the ID
     const hashedData = new Map();
@@ -193,7 +201,6 @@ const Table = () => {
 
       setData(newData);
     }
-
   };
 
   const table = useMaterialReactTable({
@@ -269,11 +276,25 @@ const Table = () => {
         <Button
           color="success"
           variant="contained"
-          onClick={handleSave}
+          onClick={() => {
+            console.log(data);
+            console.log(editedRows);
+            // handleSave()
+          }}
           disabled={Object.keys(editedRows).length === 0}
         >
           {'Save'}
         </Button>
+        <Button
+          color='primary'
+          variant='contained'
+          onClick={() => {
+            handleSave();
+            generateReport();
+          }}
+          >
+            {'Generate Report'}
+          </Button>
       </Box>
     ),
     renderTopToolbarCustomActions: () => (

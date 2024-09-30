@@ -26,6 +26,7 @@ export function addPhoto(photo) {
 export async function updatePhoto(photo) {
 
   console.log('photos updating')
+  console.log(photo);
 
   try {
     const status = await db.photos.update(photo.id, {
