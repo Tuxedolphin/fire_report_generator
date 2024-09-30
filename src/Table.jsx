@@ -232,6 +232,21 @@ const Table = () => {
             numbRowMove = 2;
             draggingRow.index -= 1;
           }
+          // The row that was dragged to cannot be between a copy and its original (Splitting them
+          // to address the out of index issue)
+
+          // BUG: not passing either if conditions
+          else if (data[hoveredRow.index - 1]) {
+            if (data[hoveredRow.index - 1].hasCopy) {
+              hoveredRow.index--;
+              console.log(hoveredRow.index);
+            }
+          } else if (data[hoveredRow.index + 1]) {
+            if (data[hoveredRow.index + 1].copyOf) {
+              hoveredRow.index++;
+              console.log(hoveredRow.index);
+            }
+          }
           newData.splice(
             hoveredRow.index, 0, ...newData.splice(draggingRow.index, numbRowMove)
           );
