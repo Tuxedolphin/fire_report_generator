@@ -57,5 +57,5 @@ To generate the report, simply click on the "generate report" button on the bott
 
 1. You may see a warning show up as shown below. Your data will still be safe and is unlikley to be deleted by any modern browsers automatically.
 2. Please **do not** clear the cookies or storage options on the browser as doing so will clear all the data saved.
-   
-![report_7](https://github.com/user-attachments/assets/78c481a4-c293-4354-8831-f878971f43f0)
+
+![report_7](https://github.com/user-attachments/assets/da662560-f9ff-48e3-8434-e54c9c915ba8)
