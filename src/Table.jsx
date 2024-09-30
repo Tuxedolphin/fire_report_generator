@@ -122,7 +122,7 @@ const Table = () => {
   );
 
   const handleSave = async () => {
-    await updatePictures((editedRows)); 
+    console.log(editedRows);
     setEditedRows({});
   }
 
@@ -136,8 +136,10 @@ const Table = () => {
       const originalIndex = data.indexOf(image);
 
       let newData = [...data];
+      console.log(newData[originalIndex]);
       newData[originalIndex].hasCopy = newId;
-      updatePhoto(newData[originalIndex]);
+      console.log(newData[originalIndex]);
+      updatePhoto(image);
 
       newData.splice(originalIndex + 1, 0, newCopy);
 
@@ -290,7 +292,7 @@ const Table = () => {
             width: '100%',
           }}
         >
-          <img src={URL.createObjectURL(row.original.blob) }></img>
+          <img src={URL.createObjectURL(row.original.blob)} style={{'width' : '40%'}}></img>
         </Box>
       ) : null,
   });
@@ -434,10 +436,5 @@ const Table = () => {
     </>
   )
 };
-
-// Saves the rows into the database
-function updatePictures(row) {
-  
-}
 
 export default Table;
