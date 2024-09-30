@@ -22,15 +22,15 @@ Please fill in the incident number, evidence bag number (if you have taken the p
 
 To add a photo, please click on the "upload photo" button located on the top left of the table. Doing so will cause the following modal to pop-up. Please fill in the photo number (the number on the file) and the description that you would like to add to the photo. 
 
-![report_2](https://github.com/user-attachments/assets/ed68bdb7-0a1e-45df-952b-db04f9ccc047)
+![report_2](https://github.com/user-attachments/assets/d1422748-7631-4c02-a514-412709a6ba34)
 
 If the file type is incorrect, an error message will be displayed as below. If the file is uploaded correctly, a green text will appear in its place.
 
-![report_3](https://github.com/user-attachments/assets/af45ccaf-0d8d-4182-bd6a-1918e429cd2e)
+![report_3](https://github.com/user-attachments/assets/4d9d7eb3-2f2c-45eb-89d8-e9b2ea52dca4)
 
 After pressing submit, a new entry should appear like the picture below.
 
-![report_4](https://github.com/user-attachments/assets/ec760ff1-2135-49f0-a33f-30351708968d)
+![report_4](https://github.com/user-attachments/assets/5db4397a-8d9d-4deb-9f36-d43321027e96)
 
 ### Editing Entries and Creating Copties
 
