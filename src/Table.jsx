@@ -4,7 +4,6 @@ import {
   updatePhoto,
   deletePhoto,
   clearAll,
-  retrievePhoto,
   retrieveAll,
 } from './db.jsx'
 import {
@@ -16,14 +15,11 @@ import {
   Box,
   Button,
   CircularProgress,
-  IconButton,
-  Tooltip,
   Typography,
   Dialog,
   DialogTitle,
   DialogActions,
   DialogContent,
-  DialogContentText,
   TextField,
   styled,
 } from '@mui/material';
@@ -102,8 +98,7 @@ const Table = () => {
           type: 'text',
           required: true,
           onBlur: (event) => {
-            setEditedRows({ ...editedRows, [row.original.id]: {...data[row.original.id], [cell.column.id]: event.target.value}});
-            console.log(editedRows);
+            setEditedRows({ ...editedRows, [row.original.id]: {...editedRows[row.original.id], [cell.column.id]: event.target.value}});
           }
         }),
       },
@@ -115,16 +110,12 @@ const Table = () => {
           type: 'text',
           required: true,
           onBlur: (event) => {
-            console.log(editedRows);
-            console.log(editedRows[cell.column.id]);
-            console.log({...data[row.original.id], [cell.column.id]: event.target.value})
-            setEditedRows({ ...editedRows, [row.original.id]: {...data[row.original.id], [cell.column.id]: event.target.value}});
-            console.log(editedRows); // BUG: value of updating rows not updating correctly
+            setEditedRows({ ...editedRows, [row.original.id]: {...editedRows[row.original.id], [cell.column.id]: event.target.value}});
           }
         }),
       },
     ],
-    [editedRows, data],
+    [editedRows],
   );
 
   // Saves the data in the data array into IndexedDB
@@ -134,15 +125,20 @@ const Table = () => {
     console.log(editedRows);
 
     // Convert the array to an object for easy access of the ID
-    const hashedData = new Map();
+    const hashedData = {};
     
     data.forEach((value) => {
-      hashedData.set(value.id, value);
+      hashedData[value.id] = value;
     });
-
-    for (const [id, photo] of Object.entries(editedRows)) {
-      if (hashedData.get(id) !== photo) {
-        updatePhoto(photo).then((success) => {
+   
+    for (const [id, edits] of Object.entries(editedRows)) {
+      let newPhoto = {...hashedData[id]};
+      console.log(newPhoto);
+      for (const [key, value] of Object.entries(edits)) {
+        newPhoto[key] = value;
+      }
+      console.log(newPhoto)
+      updatePhoto(newPhoto).then((success) => {
           if (success) {
             setEditedRows({});
           } else {
@@ -152,7 +148,6 @@ const Table = () => {
         });
       }
     }
-  }
 
   // Handles what happens when the create copy button is clicked
   const createCopy = (image) => {
@@ -415,8 +410,9 @@ const Table = () => {
             const newData = Object.fromEntries(formData.entries());
             
             console.log(data);
+            console.log(data.at(-1))
 
-            const currentNumb = (data.length === 0) ? 0 : data.at(-1)._numb.slice(-1);
+            const currentNumb = (data.length === 0) ? 0 : data.at(-1)._numb;
 
             let newPhoto = new Photo(photo, +currentNumb + 1, newData.photoNumb, newData.description);
             console.log(newPhoto);
