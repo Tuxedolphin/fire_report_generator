@@ -83,8 +83,16 @@ const Table = () => {
   const [editedRows, setEditedRows] = useState({}); // Holds the rows which were changed
   const [openAddForm, setOpenAddForm] = useState(false); // Holds if add photo form should be opened
 
+  const handleCellSave = ({ cell, row, event }) => {
+    let newData = [...data];
+    newData.find((value) => value.id === row.original.id);
+
+    setData();
+    setEditedRows({ ...editedRows, [row.original.id]: {...editedRows[row.original.id], [cell.column.id]: event.target.value}});
+  }
 
   const columns = useMemo(
+
     () => [
       {
         accessorKey: 'displayedNumb',
@@ -98,7 +106,7 @@ const Table = () => {
           type: 'text',
           required: true,
           onBlur: (event) => {
-            setEditedRows({ ...editedRows, [row.original.id]: {...editedRows[row.original.id], [cell.column.id]: event.target.value}});
+            handleCellSave({ cell, row, event });
           }
         }),
       },
@@ -110,7 +118,7 @@ const Table = () => {
           type: 'text',
           required: true,
           onBlur: (event) => {
-            setEditedRows({ ...editedRows, [row.original.id]: {...editedRows[row.original.id], [cell.column.id]: event.target.value}});
+            handleCellSave({ cell, row, event });
           }
         }),
       },
@@ -261,7 +269,8 @@ const Table = () => {
               wasCopy = false;
             }
           }
-          setData([...newData]);
+          setData(newData);
+          console.log(newData)
         }
       },
     }),
