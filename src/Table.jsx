@@ -75,24 +75,26 @@ const Table = () => {
 
   const [data, setData] = useState([]);
   useEffect(() => {
-    retrieveAll().then((items) => setData(items.map((entry) => {
-      return new Photo(entry.image, entry.numb, entry.photoNumb, entry.description, entry.id, entry.copyOf, entry.hasCopy);
-    })));
+    retrieveAll().then((items) => {
+      let newData = items.map((entry) => {
+        return new Photo(entry.image, entry.numb, entry.photoNumb, entry.description, entry.id, entry.copyOf, entry.hasCopy);
+      });
+      // Sort data based on photo number, and copy after original
+      setData(newData.sort((a, b) => {
+        if (a._numb == b._numb) {
+          return a.copyOf ? 1 : -1;
+        } 
+        return (a._numb - b._numb);
+        }
+      ));
+    });
   }, []);
   
   const [editedRows, setEditedRows] = useState({}); // Holds the rows which were changed
   const [openAddForm, setOpenAddForm] = useState(false); // Holds if add photo form should be opened
 
-  const handleCellSave = ({ cell, row, event }) => {
-    let newData = [...data];
-    newData.find((value) => value.id === row.original.id);
-
-    setData();
-    setEditedRows({ ...editedRows, [row.original.id]: {...editedRows[row.original.id], [cell.column.id]: event.target.value}});
-  }
 
   const columns = useMemo(
-
     () => [
       {
         accessorKey: 'displayedNumb',
@@ -106,7 +108,7 @@ const Table = () => {
           type: 'text',
           required: true,
           onBlur: (event) => {
-            handleCellSave({ cell, row, event });
+            setEditedRows({ ...editedRows, [row.original.id]: {...editedRows[row.original.id], [cell.column.id]: event.target.value}});
           }
         }),
       },
@@ -118,7 +120,7 @@ const Table = () => {
           type: 'text',
           required: true,
           onBlur: (event) => {
-            handleCellSave({ cell, row, event });
+            setEditedRows({ ...editedRows, [row.original.id]: {...editedRows[row.original.id], [cell.column.id]: event.target.value}});
           }
         }),
       },
@@ -181,14 +183,22 @@ const Table = () => {
 
   // Opens the delete modal, then handles the deletion of a photo
   const openDeleteConfirmModal = (row) => {
-    if (window.confirm('Are you sure you want to delete this user?')) {
+    if (window.confirm('Are you sure you want to delete this photo?')) {
       // If it has a copy, the copy needs to be deleted as well
       if (row.original.hasCopy) {
         deletePhoto(row.original.hasCopy);
       }
+
+      if (row.original.copyOf) {
+        setEditedRows({ ...editedRows, [row.original.id]: {...editedRows[row.original.id], [cell.column.id]: event.target.value}});
+      }
+
       deletePhoto(row.original.id);
 
-      let newData = data.filter((photo) => {photo !== row.original});
+      let newData = data.filter((photo) => {console.log(photo.id)
+        console.log(row.original.id);
+        photo.id !== row.original.id});
+      console.log(newData);
       let wasCopy = false; // To keep track of if the previous photo was a copy - prevent infinite loop
       
       for (let i = data.indexOf(row.original); i < newData.length; i++) {
@@ -224,7 +234,7 @@ const Table = () => {
       onDragEnd: () => {
         const { draggingRow, hoveredRow } = table.getState();
         if (hoveredRow && draggingRow) {
-          let newData = (data);
+          let newData = [...data];
           let numbRowMove = 1;
           // If it has a copy, need to move the very next object as well.
           if (data[draggingRow.index].hasCopy) {
@@ -242,11 +252,13 @@ const Table = () => {
           else if (data[hoveredRow.index - 1]) {
             if (data[hoveredRow.index - 1].hasCopy) {
               hoveredRow.index--;
+              console.log('passed 1');
               console.log(hoveredRow.index);
             }
           } else if (data[hoveredRow.index + 1]) {
             if (data[hoveredRow.index + 1].copyOf) {
               hoveredRow.index++;
+              console.log('passed 2');
               console.log(hoveredRow.index);
             }
           }
