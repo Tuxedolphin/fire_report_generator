@@ -163,6 +163,7 @@ const Table = () => {
   const createCopy = (image) => {
     
     let newCopy = image.createCopy();
+    console.log(newCopy)
     addPhoto(newCopy).then((newId) => {
       newCopy.id = newId;
 
@@ -190,14 +191,12 @@ const Table = () => {
       }
 
       if (row.original.copyOf) {
-        setEditedRows({ ...editedRows, [row.original.id]: {...editedRows[row.original.id], [cell.column.id]: event.target.value}});
+        setEditedRows({ ...editedRows, [row.original.copyOf]: {...editedRows[row.original.copyOf], ['hasCopy']: null}});
       }
 
       deletePhoto(row.original.id);
 
-      let newData = data.filter((photo) => {console.log(photo.id)
-        console.log(row.original.id);
-        photo.id !== row.original.id});
+      let newData = data.filter((photo) => {return (photo.id !== row.original.id)});
       console.log(newData);
       let wasCopy = false; // To keep track of if the previous photo was a copy - prevent infinite loop
       
@@ -247,18 +246,10 @@ const Table = () => {
           }
           // The row that was dragged to cannot be between a copy and its original (Splitting them
           // to address the out of index issue)
-
-          // BUG: not passing either if conditions
-          else if (data[hoveredRow.index - 1]) {
+          if (data[hoveredRow.index - 1]) {
             if (data[hoveredRow.index - 1].hasCopy) {
               hoveredRow.index--;
               console.log('passed 1');
-              console.log(hoveredRow.index);
-            }
-          } else if (data[hoveredRow.index + 1]) {
-            if (data[hoveredRow.index + 1].copyOf) {
-              hoveredRow.index++;
-              console.log('passed 2');
               console.log(hoveredRow.index);
             }
           }
@@ -437,8 +428,10 @@ const Table = () => {
 
             let newPhoto = new Photo(photo, +currentNumb + 1, newData.photoNumb, newData.description);
             console.log(newPhoto);
-            newPhoto.id = addPhoto(newPhoto);
-            setData([...data, newPhoto]);
+            addPhoto(newPhoto).then((newId) => {
+              newPhoto.id = newId;
+              setData([...data, newPhoto]);
+            });
 
             handleClose();
           },
