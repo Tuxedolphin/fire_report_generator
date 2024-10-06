@@ -58,6 +58,7 @@ function Photo(image, numb, photoNumb, description, id = -1, copyOf = null, hasC
   this.displayedNumb = (copyOf ? 'Copy of ' : '') + numb.toString();
   
   this.updateNumb = (newNumb) => {
+    this._numb = newNumb;
     this.displayedNumb = (this.copyOf ? 'Copy of ' : '') + newNumb.toString();
   }
 
@@ -242,38 +243,49 @@ const Table = () => {
           // If it has a copy, need to move the previous object as well.
           else if (data[draggingRow.index].copyOf) {
             numbRowMove = 2;
-            draggingRow.index -= 1;
+            draggingRow.index--;
           }
           // The row that was dragged to cannot be between a copy and its original (Splitting them
           // to address the out of index issue)
-          if (data[hoveredRow.index - 1]) {
-            if (data[hoveredRow.index - 1].hasCopy) {
+          if (data[hoveredRow.index]) {
+            if (data[hoveredRow.index].hasCopy) {
               hoveredRow.index--;
-              console.log('passed 1');
-              console.log(hoveredRow.index);
             }
           }
           newData.splice(
             hoveredRow.index, 0, ...newData.splice(draggingRow.index, numbRowMove)
           );
 
-          let a = data[hoveredRow.index].numb;
-          let b = data[draggingRow.index].numb;
+          let a = data[hoveredRow.index]._numb;
+          let b = data[draggingRow.index]._numb;
 
           // Updating the picture order numbers
           let wasCopy = false;
-          for (let i = Math.min(a, b) - 1; i < Math.max(a, b); i++) {
-            if (newData[i].numb[0].toLowerCase() === 'c' && !wasCopy) {
-              newData[i].updateNumb(i);
+          let newEditedRows = [];
+
+          for (let i = Math.min(a, b) - 1, max = Math.max(a, b), index = i, maxIndex = data.length;
+            i <= max, index < maxIndex;
+            i++, index++
+          ) {
+            if (newData[index].copyOf && !wasCopy) {
+              newData[index].updateNumb(i);
+              newEditedRows.push({['id']: newData[index].id, ['numb']: i});
               i--;
               wasCopy = true;
             } else {
-              newData[i].updateNumb(i + 1);
+              newData[index].updateNumb(i + 1);
+              newEditedRows.push({['id']: newData[index].id, ['numb']: i + 1});
               wasCopy = false;
             }
           }
+          // Update array into the current editedRows
+          let copyEditedRows = {...editedRows};
+          for (const photo of newEditedRows) {
+            copyEditedRows = {...copyEditedRows, [photo.id]: {...copyEditedRows[photo.id], ['numb']: photo.numb}};
+          }
+          console.log(copyEditedRows);
+          setEditedRows(copyEditedRows);
           setData(newData);
-          console.log(newData)
         }
       },
     }),
