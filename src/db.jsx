@@ -33,7 +33,7 @@ export async function updatePhoto(photo) {
       numb: photo._numb,
       photoNumb: photo.photoNumb,
       copyOf: photo.copyOf,
-      isCopyOf: photo.isCopyOf,
+      hasCopy: photo.hasCopy,
       description: photo.description,
     });
 
