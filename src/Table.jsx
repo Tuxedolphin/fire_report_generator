@@ -130,7 +130,7 @@ const Table = () => {
   );
 
   // Saves the data in the data array into IndexedDB
-  const handleSave = () => {
+  const handleSave = async () => {
 
     console.log(data);
     console.log(editedRows);
@@ -233,48 +233,64 @@ const Table = () => {
     muiRowDragHandleProps: ({ table }) => ({
       onDragEnd: () => {
         const { draggingRow, hoveredRow } = table.getState();
+
         if (hoveredRow && draggingRow) {
+          
+          if (hoveredRow === draggingRow) return;
+          
+          let drag = draggingRow.index;
+          let hover = hoveredRow.index;
+          
           let newData = [...data];
           let numbRowMove = 1;
           // If it has a copy, need to move the very next object as well.
           if (data[draggingRow.index].hasCopy) {
             numbRowMove = 2;
           }
-          // If it has a copy, need to move the previous object as well.
+          // If it is a copy, need to move the previous object as well.
           else if (data[draggingRow.index].copyOf) {
             numbRowMove = 2;
-            draggingRow.index--;
+            drag--;
           }
           // The row that was dragged to cannot be between a copy and its original (Splitting them
           // to address the out of index issue)
-          if (data[hoveredRow.index]) {
-            if (data[hoveredRow.index].hasCopy) {
-              hoveredRow.index--;
+          if (data[hoveredRow.index].hasCopy) {
+            if (hover < data.length - 2) {
+              hover += 2;
+            }
+          } else if (data[hoveredRow.index].copyOf && numbRowMove == 1) {
+            if (hover < data.length - 1) {
+              hover++;
             }
           }
-          newData.splice(
-            hoveredRow.index, 0, ...newData.splice(draggingRow.index, numbRowMove)
-          );
-
-          let a = data[hoveredRow.index]._numb;
-          let b = data[draggingRow.index]._numb;
+          
+          const firstIndex = (drag > hover) ? hover : (hover - numbRowMove + 1);
+          
+          newData.splice(firstIndex, 0, ...newData.splice(drag, numbRowMove));
+          console.log(newData);
+          console.log(data);
+          
+          const a = data[hoveredRow.index]._numb;
+          const b = data[draggingRow.index]._numb;
+          
+          console.log(a, b);
 
           // Updating the picture order numbers
           let wasCopy = false;
           let newEditedRows = [];
 
-          for (let i = Math.min(a, b) - 1, max = Math.max(a, b), index = i, maxIndex = data.length;
+          for (let i = Math.min(a, b), max = Math.max(a, b), index = Math.min(drag, hover), maxIndex = data.length;
             i <= max, index < maxIndex;
             i++, index++
           ) {
             if (newData[index].copyOf && !wasCopy) {
+              i--;
               newData[index].updateNumb(i);
               newEditedRows.push({['id']: newData[index].id, ['numb']: i});
-              i--;
               wasCopy = true;
             } else {
-              newData[index].updateNumb(i + 1);
-              newEditedRows.push({['id']: newData[index].id, ['numb']: i + 1});
+              newData[index].updateNumb(i);
+              newEditedRows.push({['id']: newData[index].id, ['numb']: i});
               wasCopy = false;
             }
           }
@@ -324,8 +340,7 @@ const Table = () => {
           color='primary'
           variant='contained'
           onClick={() => {
-            handleSave();
-            generateReport();
+            handleSave().then(() => generateReport());
           }}
           >
             {'Generate Report'}
@@ -410,7 +425,6 @@ const Table = () => {
       if (!checkFileValidity(file)) {
         return;
       }
-
       setPhoto(file);
     }
 
