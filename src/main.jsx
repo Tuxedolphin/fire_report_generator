@@ -5,12 +5,10 @@ import Table from './Table.jsx'
 import StoragePopup from './PersistentStoragePopup.jsx'
 import Menu from './Menu.jsx'
 
-// ask for persistant storage
-
 createRoot(document.getElementById('root')).render(
   <StrictMode>
+    <StoragePopup />
     <div className={'menu'}>
-      <StoragePopup />
       <Menu />
     </div>
     <Table />
