@@ -237,7 +237,9 @@ const Table = () => {
         if (hoveredRow && draggingRow) {
           
           if (hoveredRow === draggingRow) return;
-          
+
+          if (data[hoveredRow.index]._numb === data[draggingRow.index]._numb) return;
+
           let drag = draggingRow.index;
           let hover = hoveredRow.index;
           
@@ -254,15 +256,19 @@ const Table = () => {
           }
           // The row that was dragged to cannot be between a copy and its original (Splitting them
           // to address the out of index issue)
-          if (data[hoveredRow.index].hasCopy) {
-            if (hover < data.length - 2) {
-              hover += 2;
+          if (data[hoveredRow.index].hasCopy && hover > drag) {
+            if (numbRowMove === 2) {
+              hover += 1
+            } else if (numbRowMove === 1) {
+              hover += (drag < hover ? 1 : 2);
             }
-          } else if (data[hoveredRow.index].copyOf && numbRowMove == 1) {
+          } else if (data[hoveredRow.index].copyOf) {
             if (hover < data.length - 1) {
-              hover++;
+              hover += 1;
             }
           }
+
+          if (hover === drag) return;
           
           const firstIndex = (drag > hover) ? hover : (hover - numbRowMove + 1);
           
@@ -270,7 +276,7 @@ const Table = () => {
           console.log(newData);
           console.log(data);
           
-          const a = data[hoveredRow.index]._numb;
+          const a = data[hoveredRow.index].copyOf ? data[hoveredRow.index]._numb + 1 : data[hoveredRow.index]._numb;
           const b = data[draggingRow.index]._numb;
           
           console.log(a, b);
