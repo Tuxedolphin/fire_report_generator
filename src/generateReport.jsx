@@ -11,14 +11,24 @@ function nextChar(c) {
 }
 nextChar('a');
 
-async function generateReport() {
+/**
+ * Generates the ppt report and downloads it on user's computer
+ * 
+ * @param {Array} photos Array of Photo objects 
+ */
+async function generateReport(photos) {
+
+  console.log(photos);
+
   // Getting constants from local storage
   const bag = localStorage.getItem("bagNumb");
-  const c1Acc = localStorage.getItem("c1acc");
+  const c1Acc = JSON.parse(localStorage.getItem("c1acc"));
   const incNumb = localStorage.getItem("incidentNumb");
   const location = localStorage.getItem("location").toUpperCase();
   const postalCode = localStorage.getItem("postalCode");
   
+  console.log(c1Acc);
+
   // Formatting of slide
   let pptx = new pptxgen();
   
@@ -109,6 +119,38 @@ async function generateReport() {
         line: { width: 2.25 }
       });
 
+      slide.addShape(pptx.shapes.RECTANGLE, {
+        x: 3.58268,
+        y: 9.5393701,
+        w: 0.3346457,
+        h: 0.2519685,
+        line: { width: 1 }
+      });
+
+      slide.addText("THE AFFECTED AREA", {
+        x: 4,
+        y: 9.5393701,
+        w: 1.41732,
+        h: 0.2519685,
+        fontSize: 8,
+      });
+
+      slide.addShape(pptx.shapes.OVAL, {
+        x: 3.58268,
+        y: 9.8582677,
+        w: 0.3346457,
+        h: 0.3346457,
+        line: {width : 1.5, color: "#FC0128" }
+      });
+
+      slide.addText("AREA OF FIRE ORIGIN", {
+        x: 4,
+        y: 9.8582677,
+        w: 1.41732,
+        h: 0.2519685,
+        fontSize: 8,
+      });
+
       y = 9.2637795;
       sketchX = 0.4173228;
       legendX = 3.354331;
@@ -156,25 +198,181 @@ async function generateReport() {
     });
 
     annex = nextChar(annex);
-
   }
+
+  /**
+   * Generates the photo-log of the given project
+   */
+  const generatePhotoLog = () => {
+
+    let basic = { bold: true, align: "center" };
+    
+    let rows = [[
+      { text: "Photo", options: basic },
+      { text: "Photo UID No.", options: basic },
+      { text: "Descriptions", options: basic },
+    ]];
+
+    photos.forEach((photo) => {
+      if (bag) {
+        photo.photoUIDNumb = `${bag}/${photo.photoNumb}`
+      }
+
+      rows.push([
+        { text: photo.displayedNumb, options: { align: "center" } },
+        { text: photo.photoUIDNumb, options: basic },
+        photo.description
+      ]);
+    });
+
+    console.log(rows);
+
+    let newSlide = pptx.addSlide();
+    formatPage(newSlide);
+    newSlide.addTable(rows, {
+      x: 0.4173228,
+      y: 2.200787,
+      colW: [1.240157, 1.92913, 3.58268],
+      rowH: 0.488189,
+      h: 8,
+
+      valign: "middle",
+      border: { type: "solid" },
+      autoPage: true,
+      autoPageRepeatHeader: true,
+      autoPageSlideStartY: 2.200787,
+    });
+
+    newSlide.addText("TABLE OF PHOTO-LOG", {
+      x: 0.4094488,
+      y: 1.673228,
+      h: 0.3897638,
+      w: 3.165354,
+      fontSize: 18
+    });
+
+    pageNumb++;
+    
+    newSlide.newAutoPagedSlides.forEach((slide) => {
+      
+      formatPage(slide);
+      pageNumb++;
+      
+      slide.addText("TABLE OF PHOTO-LOG", {
+        x: 0.4094488,
+        y: 1.673228,
+        h: 0.3897638,
+        w: 3.165354,
+        fontSize: 18
+      });
+    });
+    
+    annex = nextChar(annex);
+    pageNumb = 1;
+  }
+
+
+  const leftEdge = 0.4173228;
 
   // Adds the front annexes
-  if (c1Acc) {
-    let slide = pptx.addSlide();
-    formatDrawingTemplate(slide, false);
-    let newSlide = pptx.addSlide();
-    formatDrawingTemplate(newSlide, true);
-  } else {
+  if (!c1Acc) {
 
+    let topEdge = 9.6732283;
+    let rightEdge = 4.511811;
+
+    let sketchWordsFormat = {
+      x: leftEdge,
+      y: topEdge,
+      w: 3.732283,
+      h: 0.3425197,
+      bold: true,
+      align: "center",
+      fontSize: 15,
+    }
+
+    let legendWordsFormat = {
+      x: 5.07874,
+      y: topEdge,
+      w: 1.389764,
+      h: 0.2519685,
+      fontSize: 8,
+    }
+
+    let rectangleFormat = {
+      x: rightEdge,
+      y: topEdge,
+      w: 0.4173228,
+      h: 0.2519685,
+    }
+
+    let annexA = pptx.addSlide();
+    formatDrawingTemplate(annexA, false);
+    annexA.addText("LOCATION PLAN", sketchWordsFormat);
+    annexA.addShape(pptx.shapes.RECTANGLE, {
+      ...rectangleFormat,
+      line: { width: 1.5, color: "#FF0000" },
+    });
+    annexA.addText("INCIDENT SITE", legendWordsFormat);
+    
+    let annexB = pptx.addSlide();
+    formatDrawingTemplate(annexB, false);
+    annexB.addText("SITE PLAN", sketchWordsFormat);
+    annexB.addShape(pptx.shapes.RECTANGLE, {
+      ...rectangleFormat,
+      line: { width: 1.5 },
+      fill: { type: "solid", color: "#919191"}
+    });
+    annexB.addText("THE AFFECTED AREA", legendWordsFormat);
   }
   
+  let newSlide = pptx.addSlide();
+  formatDrawingTemplate(newSlide, true);
+  newSlide.addText(
+    [
+      { text: "LAYOUT PLAN OF THE", options: { breakLine: true } },
+      { text: "AFFECTED AREA"},
+    ],
+    { x: leftEdge,
+      y: 9.511811,
+      w: 2.905512,
+      h: 0.492126,
+      bold: true,
+      align: "center",
+      fontSize: 12,
+    }
+  );
+  
+  if (!c1Acc) {
+    generatePhotoLog();
+
+    let annexE = pptx.addSlide();
+    formatPage(annexE);
+    formatDrawingTemplate(annexE, true);
+    annexE.addText(
+      [
+        { text: "PHOTO-LOG", options: { breakLine: true, fontSize: 14 } },
+        { text: `Photos 1-${photos.at(-1).slice(-1)}`, options: { fontSize: 12 } },
+      ],
+      { x: leftEdge,
+        y: 9.511811,
+        w: 2.905512,
+        h: 0.492126,
+        bold: true,
+        align: "center"
+      });
+  }
+
+  let lastPhoto = {};
+
+  for (let i = 0, total = photos.length; i < total; i++) {
+
+    let slide = 
+
+    let photo = photos[i];
 
 
-  let slide = pptx.addSlide();
-  formatPage(slide);
-
-
+    if ()
+  }
 
   pptx.writeFile({ fileName: `${incNumb.replace("/", "-")}-location` });
 
