@@ -60,15 +60,15 @@ function Menu() {
         <Grid size = {4}>
           <Typography>Report Type:</Typography>
           <Stack direction='row' spacing={1} sx={{ alignItems: 'center' }}>
-            <Typography>C1 Accidental Report</Typography>
+            <Typography>Full Report</Typography>
             <Switch
               checked={c1acc}
               onChange={() => {
                 setC1acc(!c1acc);
                 localStorage.setItem('c1acc', JSON.stringify(!c1acc));
               }}
-            />
-            <Typography>Full Report</Typography>
+              />
+            <Typography>C1 Accidental Report</Typography>
           </Stack>
         </Grid>
         <Grid size={8}>
