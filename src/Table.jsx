@@ -45,9 +45,6 @@ class Photo {
   constructor(image, numb, photoNumb, description, id = -1, copyOf = null, hasCopy = null) {
     this.id = id;
     this.image = new Image();
-    this.image.onload = () => {
-      console.log(this.image.width, this.image.height);
-    }
     this.image.src = URL.createObjectURL(image);
     this.photoNumb = photoNumb.toString();
     this.description = description;
@@ -70,6 +67,10 @@ class Photo {
 
   createCopy() {
     return new Photo(this.blob, this.numb, this.photoNumb, '', -1, this.id);
+  }
+
+  getOrientation() {
+    return (this.image.width > this.image.height) ? "landscape" : "portrait"
   }
 
 }
@@ -216,6 +217,24 @@ const Table = () => {
     }
   };
 
+  const verifyGenerateReport = () => {
+    console.log(localStorage.getItem('incidentNumb'));
+    if (!localStorage.getItem('incidentNumb')) {
+      return "Please key in incident number.";
+    }
+    if (!localStorage.getItem('location')) {
+      return "Please key in the location.";
+    }
+    if (!localStorage.getItem('postalCode')) {
+      return "Please key in the postal code.";
+    }
+    if (data.length === 0) {
+      return "Please add at least one photo";
+    }
+
+    return "";
+  }
+
   const table = useMaterialReactTable({
     columns,
     data,
@@ -344,10 +363,16 @@ const Table = () => {
           color='primary'
           variant='contained'
           onClick={() => {
-            generateReport(data);}}
-          >
-            {'Generate Report'}
-          </Button>
+            const message = verifyGenerateReport();
+            if (message) {
+              alert(message);
+            } else {
+              generateReport(data);
+            }
+          }}
+        >
+          {'Generate Report'}
+        </Button>
       </Box>
     ),
     renderTopToolbarCustomActions: () => (
