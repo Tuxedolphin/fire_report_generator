@@ -22,10 +22,10 @@ async function generateReport(photos) {
 
   // Getting constants from local storage
   const bag = localStorage.getItem("bagNumb");
-  const c1Acc = JSON.parse(localStorage.getItem("c1acc"));
+  const c1Acc = (localStorage.getItem("c1acc") === null) ? false : JSON.parse(localStorage.getItem("c1acc"));
   const incNumb = localStorage.getItem("incidentNumb");
   const location = localStorage.getItem("location").toUpperCase();
-  const postalCode = localStorage.getItem("postalCode");
+  const postalCode = (localStorage.getItem("postalCode"));
   
   console.log(c1Acc);
 
@@ -218,6 +218,8 @@ async function generateReport(photos) {
         photo.photoUIDNumb = `${bag}/${photo.photoNumb}`
       }
 
+      photo.isLandscape = (photo.image.width > photo.image.height) ? true : false;
+
       rows.push([
         { text: photo.displayedNumb, options: { align: "center" } },
         { text: photo.photoUIDNumb, options: basic },
@@ -364,17 +366,44 @@ async function generateReport(photos) {
       });
   }
 
-  let lastPhoto = {};
-
-  for (let i = 0, total = photos.length; i < total; i++) {
+  for (let i = 0; i < photos.length; i++) {
 
     let slide = pptx.addSlide();
     formatPage(slide);
 
-    let photo = photos[i];
-    console.log(photo);
-    console.log(photo.width);
+    let firstPhoto = photos[i];
+    if (firstPhoto.isLandscape) {
+      //TODO: Format texts and pictures
+      // TODO: Note that you can resize the picture using pptxgenjs
+      
+      slide.addImage({
+        x: 1, // TODO: Calculate based on difference in image height
+        y: 1,
+        sizing: { }
+      })
+
+      // The second photo must be of the same orientation and not have a copy
+      if (photos[i + 1].isLandscape && !photos[i + 1].hasCopy) {
+        let secondPhoto = photos[i + 1];
+        i++;
+      }
+
+    } else {
+      // If two portrait photo on the slide
+      if (!photos[i + 1].isLandscape && !photos[i + 1].hasCopy) {
+        let secondPhoto = photos[i + 1];
+        i++;
+      } else {
+
+      }
+    }
+
+    pageNumb++;
+    
   }
+
+  // TODO: Add signature slide
+  // TODO: Add injury
 
   pptx.writeFile({ fileName: `${incNumb.replace("/", "-")}-location` });
 
