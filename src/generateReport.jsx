@@ -345,13 +345,15 @@ async function generateReport(photos) {
   if (!c1Acc) {
     generatePhotoLog();
 
+    console.log(photos.at(-1));
+
     let annexE = pptx.addSlide();
     formatPage(annexE);
     formatDrawingTemplate(annexE, true);
     annexE.addText(
       [
         { text: "PHOTO-LOG", options: { breakLine: true, fontSize: 14 } },
-        { text: `Photos 1-${photos.at(-1).slice(-1)}`, options: { fontSize: 12 } },
+        { text: `Photos 1-${photos.at(-1).numb}`, options: { fontSize: 12 } },
       ],
       { x: leftEdge,
         y: 9.511811,
@@ -366,12 +368,12 @@ async function generateReport(photos) {
 
   for (let i = 0, total = photos.length; i < total; i++) {
 
-    let slide = 
+    let slide = pptx.addSlide();
+    formatPage(slide);
 
     let photo = photos[i];
-
-
-    if ()
+    console.log(photo);
+    console.log(photo.width);
   }
 
   pptx.writeFile({ fileName: `${incNumb.replace("/", "-")}-location` });

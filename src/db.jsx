@@ -9,7 +9,7 @@ db.version(1).stores({
 export function addPhoto(photo) {
   try {
     return db.photos.add({
-      numb: photo._numb,
+      numb: photo.numb,
       photoNumb: photo.photoNumb,
       copyOf: photo.copyOf,
       hasCopy: null,
@@ -30,7 +30,7 @@ export async function updatePhoto(photo) {
 
   try {
     const status = await db.photos.update(photo.id, {
-      numb: photo._numb,
+      numb: photo.numb,
       photoNumb: photo.photoNumb,
       copyOf: photo.copyOf,
       hasCopy: photo.hasCopy,
