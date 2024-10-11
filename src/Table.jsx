@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import {
   addPhoto,
   updatePhoto,
@@ -45,10 +45,10 @@ class Photo {
   constructor(image, numb, photoNumb, description, id = -1, copyOf = null, hasCopy = null) {
     this.id = id;
     this.image = new Image();
-    this.image.url = URL.createObjectURL(image);
     this.image.onload = () => {
       console.log(this.image.width, this.image.height);
     }
+    this.image.src = URL.createObjectURL(image);
     this.photoNumb = photoNumb.toString();
     this.description = description;
     this.copyOf = copyOf;
@@ -95,7 +95,6 @@ const Table = () => {
   
   const [editedRows, setEditedRows] = useState({}); // Holds the rows which were changed
   const [openAddForm, setOpenAddForm] = useState(false); // Holds if add photo form should be opened
-
 
   const columns = useMemo(
     () => [
@@ -422,7 +421,6 @@ const Table = () => {
         setDisableButton(false);
         return true;
       }
-
     }
 
     const handleFile = (file) => {
@@ -508,6 +506,9 @@ const Table = () => {
               onChange={(event) => {
                 try {
                 console.log(event.target.files[0])
+
+                
+
                 handleFile(event.target.files[0])
                 } catch (error) {
                   console.log(error);
