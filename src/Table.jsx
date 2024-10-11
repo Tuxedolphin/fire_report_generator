@@ -39,38 +39,40 @@ const VisuallyHiddenInput = styled('input')({
   width: 1,
 });
 
-// Object to hold the required information of each photo
-function Photo(image, numb, photoNumb, description, id = -1, copyOf = null, hasCopy = null) { // Note that image is of type File
-  this.id = id;
-  this.image = new Image();
-  this.image.url = URL.createObjectURL(image);
-  this.image.onload = function() {
-    this.orientation = ((this.image.width > this.image.height) ? "landscape" : "portrait"); // TODO: Check if working
-    console.log(this.image.width + this.image.height);
-  }
-  this.photoNumb = photoNumb.toString();
-  this.description = description;
-  this.copyOf = copyOf;
-  this.hasCopy = hasCopy;
-  this.blob = new Blob([image]);
+// class to hold the required information of each photo
+class Photo {
 
-  this._numb = numb;
-  this.displayedNumb = (copyOf ? 'Copy of ' : '') + numb.toString();
-  
-  this.updateNumb = (newNumb) => {
-    this._numb = newNumb;
+  constructor(image, numb, photoNumb, description, id = -1, copyOf = null, hasCopy = null) {
+    this.id = id;
+    this.image = new Image();
+    this.image.url = URL.createObjectURL(image);
+    this.image.onload = () => {
+      console.log(this.image.width, this.image.height);
+    }
+    this.photoNumb = photoNumb.toString();
+    this.description = description;
+    this.copyOf = copyOf;
+    this.hasCopy = hasCopy;
+    this.blob = new Blob([image]);
+
+    this.numb = numb;
+    this.displayedNumb = (copyOf ? 'Copy of ' : '') + numb.toString();
+  }
+
+  updateNumb(newNumb) {
+    this.numb = newNumb;
     this.displayedNumb = (this.copyOf ? 'Copy of ' : '') + newNumb.toString();
   }
 
-  this.createPureCopy = () => {
-    return new Photo(this.image, this._numb, this.photoNumb, this.description, this.id, this.copyOf, this.hasCopy);
+  createPureCopy() {
+    return new Photo(this.image, this.numb, this.photoNumb, this.description, this.id, this.copyOf, this.hasCopy);
   }
 
-  this.createCopy = () => {
-    return new Photo(this.blob, this._numb, this.photoNumb, '', -1, this.id);
+  createCopy() {
+    return new Photo(this.blob, this.numb, this.photoNumb, '', -1, this.id);
   }
+
 }
-
 
 const Table = () => {
 
@@ -82,10 +84,10 @@ const Table = () => {
       });
       // Sort data based on photo number, and copy after original
       setData(newData.sort((a, b) => {
-        if (a._numb == b._numb) {
+        if (a.numb == b.numb) {
           return a.copyOf ? 1 : -1;
         } 
-        return (a._numb - b._numb);
+        return (a.numb - b.numb);
         }
       ));
     });
@@ -206,9 +208,7 @@ const Table = () => {
           newData[i].updateNumb(i);
           i--;
           wasCopy = true;
-        }
-
-        else {
+        } else {
           newData[i].updateNumb(i + 1);
           wasCopy = false;
         }
@@ -238,7 +238,7 @@ const Table = () => {
           
           if (hoveredRow === draggingRow) return;
 
-          if (data[hoveredRow.index]._numb === data[draggingRow.index]._numb) return;
+          if (data[hoveredRow.index].numb === data[draggingRow.index].numb) return;
 
           let drag = draggingRow.index;
           let hover = hoveredRow.index;
@@ -276,8 +276,8 @@ const Table = () => {
           console.log(newData);
           console.log(data);
           
-          const a = data[hoveredRow.index].copyOf ? data[hoveredRow.index]._numb + 1 : data[hoveredRow.index]._numb;
-          const b = data[draggingRow.index]._numb;
+          const a = data[hoveredRow.index].copyOf ? data[hoveredRow.index].numb + 1 : data[hoveredRow.index].numb;
+          const b = data[draggingRow.index].numb;
           
           console.log(a, b);
 
@@ -335,19 +335,17 @@ const Table = () => {
           variant="contained"
           onClick={() => {
             console.log(data);
-            console.log(editedRows);
             handleSave()
           }}
           disabled={Object.keys(editedRows).length === 0}
-        >
+          >
           {'Save'}
         </Button>
         <Button
           color='primary'
           variant='contained'
           onClick={() => {
-            handleSave().then(() => generateReport());
-          }}
+            generateReport(data);}}
           >
             {'Generate Report'}
           </Button>
@@ -456,7 +454,7 @@ const Table = () => {
             console.log(data);
             console.log(data.at(-1))
 
-            const currentNumb = (data.length === 0) ? 0 : data.at(-1)._numb;
+            const currentNumb = (data.length === 0) ? 0 : data.at(-1).numb;
 
             let newPhoto = new Photo(photo, +currentNumb + 1, newData.photoNumb, newData.description);
             console.log(newPhoto);
