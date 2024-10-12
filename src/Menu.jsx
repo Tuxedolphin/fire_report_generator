@@ -32,7 +32,7 @@ function Menu() {
 
   return (
     <Box sx={{ width: '100%', maxWidth: '80vw', flexGrow: 1, marginBottom: '25px',  textAlign: 'center'}}>
-      <Typography variant='h2' gutterBottom> Fire Report Generator </Typography>
+      <Typography variant='h2' gutterBottom marginTop={'50px'}> Fire Report Generator </Typography>
       <Grid container spacing={2}>
         <Grid size={4}>
           <TextField
