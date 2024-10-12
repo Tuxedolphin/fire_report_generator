@@ -320,6 +320,7 @@ function generatePhotoAnnex(photos) {
 
   }
 
+  // Defining the width of the photos
   const width = {
     landscape: 5.0748031
   }
@@ -329,16 +330,19 @@ function generatePhotoAnnex(photos) {
     let slide = pptx.addSlide();
     formatPage(slide);
 
-    let firstPhoto = photos[i];
-    let firstRatio = getAspectRatio(firstPhoto);
+    const firstPhoto = photos[i];
+    const firstRatio = getAspectRatio(firstPhoto.image);
 
     if (firstPhoto.isLandscape) {
 
+      const firstPhotoHeight = (width.landscape * (1/firstRatio));
       slide.addImage({
         x: defaultX.l,
-        y: defaultY.l1 + (3.5 - width.landscape * (1/firstRatio)), // Need to account for the difference in height for different aspect ratios
+        y: defaultY.l1 + (3.5 - firstPhotoHeight), // Need to account for the difference in height for different aspect ratios
+        w: width.landscape,
+        h: firstPhotoHeight,
         path: firstPhoto.image.src,
-        sizing: { type: "contain", w: width.landscape }
+        sizing: { type: "contain", w: width.landscape, h: firstPhotoHeight }
       });
 
       const topTextY = 4.8937008;
@@ -348,19 +352,29 @@ function generatePhotoAnnex(photos) {
         x: 1.251969,
         w: 2.5,
         h: topTextHeight,
+        fontSize: 12,
+        bold: true,
+        margin: 0,
       };
 
       const rightTopTextFormat = {
         x: '50%',
         w: 2.574803,
         h: topTextHeight,
+        fontSize: 12,
+        bold: true,
+        margin: 0,
+        align: "right",
       };
 
       const descriptionFormat = {
         x: 1.2519685,
         h: 0.708661,
         w: 5.0748031,
-      }
+        fontSize: 12,
+        margin: 0,
+        valign: "top",
+      };
 
       slide.addText(`PHOTO ${firstPhoto.numb}`, {
         ...leftTopTextFormat,
@@ -370,7 +384,6 @@ function generatePhotoAnnex(photos) {
       slide.addText(firstPhoto.photoUIDNumb, {
         ...rightTopTextFormat,
         y: topTextY
-        
       });
 
       slide.addText(firstPhoto.description, {
@@ -382,38 +395,51 @@ function generatePhotoAnnex(photos) {
         // The second photo must be of the same orientation and not have a copy
         if (photos[i + 1].isLandscape && !photos[i + 1].hasCopy) {
           i++;
-          let secondPhoto = photos[i];
-          let secondRatio = getAspectRatio(secondPhoto);
+          const secondPhoto = photos[i];
+          const secondRatio = getAspectRatio(secondPhoto.image);
+
+          const secondPhotoHeight = width.landscape * (1/secondRatio)
 
           slide.addImage({
             x: defaultX.l,
             y: defaultY.l2 + (3.5 - width.landscape * (1/secondRatio)), // Need to account for the difference in height for different aspect ratios
+            w: width.landscape,
+            h: secondPhotoHeight,
             path: secondPhoto.image.src,
-            sizing: { type: "contain", w: width.landscape }
+            sizing: { type: "contain", w: width.landscape, h: secondPhotoHeight }
           });
 
           const bottomTextY = 9.488189;
 
           slide.addText(`${secondPhoto.copyOf ? "COPY OF" : ""} PHOTO ${secondPhoto.numb}`, {
-            x: defaultX.l,
+            ...leftTopTextFormat,
             y: bottomTextY,
-            h: topTextHeight,
-
-
           });
 
+          slide.addText(secondPhoto.photoUIDNumb, {
+            ...rightTopTextFormat,
+            y: bottomTextY,
+          });
 
+          slide.addText(secondPhoto.description, {
+            ...descriptionFormat,
+            y: 9.6929134,
+          });
         }
       }
 
     } else {
-      // If two portrait photo on the slide
-      if (!photos[i + 1].isLandscape && !photos[i + 1].hasCopy) {
-        let secondPhoto = photos[i + 1];
-        i++;
+
+      // Defining useful constants
+
+
+      // For when there is only one portrait photo on the slide
+      if (i == photos.length - 1 || photos[i + 1].isLandscape || photos[i + 1].hasCopy) {
+
       } else {
 
       }
+
     }
 
     pageNumb++;
@@ -424,14 +450,18 @@ function generatePhotoAnnex(photos) {
 /**
  * Generates the ppt report and downloads it on user's computer
  * 
- * @param {Array} photos Array of Photo objects 
+ * @param {Array<Photo>} photos Array of Photo objects 
  */
 async function generateReport(photos) {
 
   console.log(photos);
-  updateBasicConstants();
 
+  updateBasicConstants();
   formatPptx();
+
+  // Ensure the beginning variables are reset
+  annex = 'A';
+  pageNumb = 1;
 
   const leftEdge = 0.4173228;
 
