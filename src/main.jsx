@@ -7,7 +7,7 @@ import Menu from './Menu.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <StoragePopup />
+    <StoragePopup/>
     <div className={'menu'}>
       <Menu />
     </div>
