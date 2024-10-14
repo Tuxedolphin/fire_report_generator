@@ -1,7 +1,7 @@
 import pptxgen from "pptxgenjs";
 
 //Defining constants for global use - note that let is used to update it every time the function is called
-let bag, c1Acc, incNumb, location, postalCode;
+let bag, c1Acc, incNumb, location, postalCode, postalCodeLine;
 
 let pptx;
 
@@ -18,20 +18,12 @@ function updateBasicConstants() {
   incNumb = localStorage.getItem("incidentNumb");
   location = localStorage.getItem("location").toUpperCase();
   postalCode = (localStorage.getItem("postalCode"));
-}
 
-/**
- * Creates a new pptxgen object and formats its basic values
- */
-function formatPptx() {
-  
-  pptx = new pptxgen();
-  
-  pptx.subject = "Fire Report";
-  pptx.theme = { headFontFace: "Arial", bodyFontFace: "Arial" };
-  pptx.defineLayout({ name:'A4', width:7.5, height:11.0244094 });
-  pptx.layout = "A4";
-  
+  if (!postalCode) {
+    postalCodeLine = '';
+  } else {
+    postalCodeLine = `                                   SINGAPORE ${postalCode}`;
+  }
 }
 
 /**
@@ -67,6 +59,20 @@ function getAspectRatio(image) {
 };
 
 /**
+ * Creates a new pptxgen object and formats its basic values
+ */
+function formatPptx() {
+  
+  pptx = new pptxgen();
+  
+  pptx.subject = "Fire Report";
+  pptx.theme = { headFontFace: "Arial", bodyFontFace: "Arial" };
+  pptx.defineLayout({ name:'A4', width:7.5, height:11.0244094 });
+  pptx.layout = "A4";
+  
+}
+
+/**
    * Adds the basic formatting to each slide. Specific values taken with reference from original ppt (in inches),
    * which is why the values are so specific.
    * 
@@ -86,7 +92,7 @@ const formatPage = (slide) => {
     [
       { text: `INCIDENT NUMBER: /${incNumb}`, options: { breakLine: true } },
       { text: `LOCATION OF FIRE: ${location}`, options: { breakLine: true } },
-      { text: `                                   SINGAPORE ${postalCode}`} // Extra white space for formatting
+      { text: postalCodeLine } // Extra white space for formatting
     ],
     { x: 0.6653543, y: 0.4291339, h: 0.6968504, w: 5.5472441, fontSize: 12 }
   );
@@ -313,16 +319,20 @@ function generatePhotoAnnex(photos) {
   const defaultY = {
     l1: 1.326772, // First photo of landscape mode
     l2: 5.9094488,
+    p: 2.3622,
   }
 
   const defaultX = {
     l: 1.251969, // X location for landscape pictures
-
+    p1: 0.1653543, // X location for left portrait photo if there's two on one slide
+    p2: 3.85827,
+    pc: 2.07874, // X location for if there's only one portrait photo on the slide, i.e. it's in the center
   }
 
   // Defining the width of the photos
   const width = {
-    landscape: 5.0748031
+    l: 5.0748031, // For landscape
+    p: 3.484252, // For portrait
   }
 
   for (let i = 0; i < photos.length; i++) {
@@ -335,14 +345,14 @@ function generatePhotoAnnex(photos) {
 
     if (firstPhoto.isLandscape) {
 
-      const firstPhotoHeight = (width.landscape * (1/firstRatio));
+      const firstPhotoHeight = (width.l * (1/firstRatio));
       slide.addImage({
         x: defaultX.l,
         y: defaultY.l1 + (3.5 - firstPhotoHeight), // Need to account for the difference in height for different aspect ratios
-        w: width.landscape,
+        w: width.l,
         h: firstPhotoHeight,
         path: firstPhoto.image.src,
-        sizing: { type: "contain", w: width.landscape, h: firstPhotoHeight }
+        sizing: { type: "contain", w: width.l, h: firstPhotoHeight }
       });
 
       const topTextY = 4.8937008;
@@ -398,15 +408,15 @@ function generatePhotoAnnex(photos) {
           const secondPhoto = photos[i];
           const secondRatio = getAspectRatio(secondPhoto.image);
 
-          const secondPhotoHeight = width.landscape * (1/secondRatio)
+          const secondPhotoHeight = width.l * (1/secondRatio);
 
           slide.addImage({
             x: defaultX.l,
-            y: defaultY.l2 + (3.5 - width.landscape * (1/secondRatio)), // Need to account for the difference in height for different aspect ratios
-            w: width.landscape,
+            y: defaultY.l2 + (3.5 - secondPhotoHeight), // Need to account for the difference in height for different aspect ratios
+            w: width.l,
             h: secondPhotoHeight,
             path: secondPhoto.image.src,
-            sizing: { type: "contain", w: width.landscape, h: secondPhotoHeight }
+            sizing: { type: "contain", w: width.l, h: secondPhotoHeight }
           });
 
           const bottomTextY = 9.488189;
@@ -430,21 +440,125 @@ function generatePhotoAnnex(photos) {
 
     } else {
 
-      // Defining useful constants
+      let slide = pptx.addSlide();
+      let photo = photos[i];
 
+      formatPage(slide);
+
+      // For the y-position and height of photo number and photo UID number text boxes
+      const topTextY = 7.0590551;
+      const topTextH = 0.2007874;
+
+      // For the width of the textbox for photo number and photo UID number
+      const leftW = 1.858268;
+      const rightW = 1.625984;
+      
+      let ratio = getAspectRatio(photo);
+
+      const imgDimension = {
+        w: width.p,
+        h: width.p * ratio
+      };
+
+      const topTextFormat = {
+        y: topTextY,
+        h: topTextH,
+        fontSize: 12,
+        bold: true,
+        margin: 0,
+      }
+
+      const descriptionFormat = {
+        y: 7.2598425,
+        h: 0.9094488,
+        w: 3.66142,
+        valign: "top",
+        fontSize: 12,
+      };;
 
       // For when there is only one portrait photo on the slide
       if (i == photos.length - 1 || photos[i + 1].isLandscape || photos[i + 1].hasCopy) {
 
+        slide.addImage({
+          x: defaultX.pc,
+          y: defaultY.p + (4.645669 - imgDimension.h),
+          ...imgDimension,
+          path: photo.image.src,
+          sizing: { type: "contain", ...imgDimension },
+        });
+
+        slide.addText(`${photo.copyOf ? "COPY OF" : ""} PHOTO ${photo.numb}`, {
+          ...topTextFormat,
+          x: defaultX.pc,
+          w: leftW,
+        });
+
+        slide.addText(photo.photoUIDNumb, {
+          ...topTextFormat,
+          x: defaultX.pc,
+          w: rightW,
+          align: "right"
+        });
+        
+        slide.addText(photo.description, {
+          ...descriptionFormat,
+          x: defaultX.pc,
+        });
+
       } else {
 
-      }
+        let leftX = defaultX.p1;
+        let rightX = 2.027559;
 
+        // For loop for 2 photos
+        for (let j = 0; j < 2; j++) {
+          
+          // Formatting of image and its descriptions
+          slide.addImage({
+            x: leftX,
+            y: defaultY.p + (4.645669 - imgDimension.h),
+            ...imgDimension,
+            path: photo.image.src,
+            sizing: { type: "contain", ...imgDimension }
+          });
+  
+          slide.addText(`PHOTO ${photo.numb}`, {
+            ...topTextFormat,
+            x: leftX,
+            w: leftW,
+          });
+
+          slide.addText(photo.photoUIDNumb, {
+            ...topTextFormat,
+            x: rightX,
+            w: rightW,
+            align: "right"
+          });
+          
+          slide.addText(photo.description, {
+            ...descriptionFormat,
+            x: leftX,
+          });
+
+          // Update variables to follow that of the second image
+          leftX = defaultX.p2;
+          rightX = 5.7165354;
+          photo = photos[i + 1];
+
+          if (Math.abs(getAspectRatio(photo) - ratio) > 0.0001) {
+            ratio = getAspectRatio(photo);
+          }
+        }
+        i++;
+      }
     }
 
     pageNumb++;
     
   }
+
+  pageNumb = 1;
+  annex = nextChar(annex);
 }
 
 /**
@@ -556,11 +670,6 @@ async function generateReport(photos) {
   }
   
   generatePhotoAnnex(photos);
-
-  // TODO: Add signature slide
-  pageNumb = 1;
-
-  // TODO: Add injury
 
   pptx.writeFile({ fileName: `${incNumb.replace("/", "-")}-location` });
 
