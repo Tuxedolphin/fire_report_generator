@@ -188,22 +188,35 @@ const Table = () => {
   // Opens the delete modal, then handles the deletion of a photo
   const openDeleteConfirmModal = (row) => {
     if (window.confirm('Are you sure you want to delete this photo?')) {
+
+      let newData = [...data];
+
       // If it has a copy, the copy needs to be deleted as well
       if (row.original.hasCopy) {
-        deletePhoto(row.original.hasCopy);
+        newData = handleDelete(data.find((element) => element.id == row.original.hasCopy), newData);
       }
+      newData = handleDelete(row.original, newData);
 
-      if (row.original.copyOf) {
-        setEditedRows({ ...editedRows, [row.original.copyOf]: {...editedRows[row.original.copyOf], ['hasCopy']: null}});
-      }
+      setData(newData);
+    }
+  };
 
-      deletePhoto(row.original.id);
+  const handleDelete = (photo, data) => {
+    deletePhoto(photo.id);
 
-      let newData = data.filter((photo) => {return (photo.id !== row.original.id)});
-      console.log(newData);
+    let newData = data.filter((element) => {return (photo.id != element.id)});
+
+    if (photo.copyOf) {
+      const index = newData.findIndex((element) => element.id == photo.copyOf);
+      newData[index].hasCopy = null;
+      return newData;
+
+    } else {
+
       let wasCopy = false; // To keep track of if the previous photo was a copy - prevent infinite loop
       
-      for (let i = data.indexOf(row.original); i < newData.length; i++) {
+      // We only need to update the numbers if the photo deleted is not a copy
+      for (let i = data.indexOf(photo); i < newData.length; i++) {
         if (newData[i].copyOf && !wasCopy) {
           newData[i].updateNumb(i);
           i--;
@@ -213,9 +226,9 @@ const Table = () => {
           wasCopy = false;
         }
       }
-      setData(newData);
+      return newData;
     }
-  };
+  }
 
   const verifyGenerateReport = () => {
     console.log(localStorage.getItem('incidentNumb'));
@@ -244,7 +257,6 @@ const Table = () => {
     enableRowOrdering: true,
     enableSorting: false,
     enableColumnResizing: true,
-    enableExpandAll: false,
     initialState: {
       columnPinning: { right: ['mrt-row-actions'] },
     },
@@ -334,6 +346,7 @@ const Table = () => {
         icon={<Add />}
         key="add"
         label="Create Copy"
+        disabled={ !!(row.original.hasCopy || row.original.copyOf) }
         onClick={() => {
           createCopy(row.original)}}
         table={table}
@@ -393,25 +406,18 @@ const Table = () => {
             : 'rgba(0,0,0,0.1)',
       }),
     }),
-    //custom expand button rotation
-    muiExpandButtonProps: ({ row }) => ({
-      sx: {
-        transform: row.getIsExpanded() ? 'rotate(180deg)' : 'rotate(-90deg)',
-        transition: 'transform 0.2s',
-      },
-    }),
     //conditionally render detail panel
     renderDetailPanel: ({ row }) =>
-      row.original ? (
+      !row.original.copyOf ? (
         <Box
           sx={{
-            display: 'grid',
+            display: 'flex',
             margin: 'auto',
-            gridTemplateColumns: '1fr 1fr',
             width: '100%',
+            justifyContent: 'center',
           }}
         >
-          <img src={URL.createObjectURL(row.original.blob)} style={{'width' : '40%'}}></img>
+          <img src={row.original.image.src} style={{'width' : '40%'}}></img>
         </Box>
       ) : null,
   });
