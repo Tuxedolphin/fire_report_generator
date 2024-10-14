@@ -24,6 +24,7 @@ import {
   styled,
 } from '@mui/material';
 import { Delete, Add, CloudUpload } from '@mui/icons-material';
+import PropTypes from "prop-types";
 import generateReport from './generateReport.jsx';
 
 // Hidden Input For Adding Functionality To Some Buttons
@@ -72,10 +73,156 @@ class Photo {
   getOrientation() {
     return (this.image.width > this.image.height) ? "landscape" : "portrait"
   }
-
 }
 
-const Table = () => {
+AddPhotoForm.propTypes = {
+  openAddForm: PropTypes.bool,
+  setOpenAddForm: PropTypes.func,
+  data: PropTypes.array,
+  setData: PropTypes.func,
+}
+
+// Modal for data entry
+function AddPhotoForm({ openAddForm, setOpenAddForm, data, setData }) {
+
+  const [photo, setPhoto] = useState(new File([""], "empty"));
+  const [status, setStatus] = useState('');
+  const [validFile, setValidFile] = useState('');
+  const [disableButton, setDisableButton] = useState(true);
+
+  const checkFileValidity = (file) => {
+
+    if (!file) {
+      setValidFile('error');
+      setStatus('File could not be uploaded.')
+      setDisableButton(true);
+    }
+
+    let parts = file['name'].split('.');
+    let result = ['jpeg', 'jpg', 'png', 'raw', 'heic'].indexOf(parts[parts.length - 1]);
+
+    if (result < 0) {
+      setValidFile('error');
+      setStatus(`File "${file['name']}" has invalid file format.`);
+      setDisableButton(true);
+      return false;
+    } else {
+      setValidFile('success');
+      setStatus(`File "${file['name']}" uploaded`);
+      setDisableButton(false);
+      return true;
+    }
+  }
+
+  const handleFile = (file) => {
+    if (!checkFileValidity(file)) {
+      return;
+    }
+    setPhoto(file);
+  }
+
+  const handleClose = () => {
+    setPhoto(new File([''], 'empty'));
+    setDisableButton(true);
+    setStatus('');
+    setValidFile('');
+    setOpenAddForm(false);
+  }
+
+  return (
+    <Dialog
+      open={openAddForm}
+      onClose={handleClose}
+      PaperProps={{
+        component: 'form',
+        onSubmit: (event) => {
+          event.preventDefault();
+          const formData = new FormData(event.currentTarget);
+          const newData = Object.fromEntries(formData.entries());
+          
+          console.log(data);
+          console.log(data.at(-1))
+
+          const currentNumb = (data.length === 0) ? 0 : data.at(-1).numb;
+
+          let newPhoto = new Photo(photo, +currentNumb + 1, newData.photoNumb, newData.description);
+          console.log(newPhoto);
+          addPhoto(newPhoto).then((newId) => {
+            newPhoto.id = newId;
+            setData([...data, newPhoto]);
+          });
+
+          handleClose();
+        },
+      }}
+      fullWidth
+    >
+      <DialogTitle>Add Photo</DialogTitle>
+      <DialogContent>
+        <TextField
+          autoFocus
+          id='photoNumb'
+          name='photoNumb'
+          required
+          margin='dense'
+          label='Photo Number'
+          variant='standard'
+          type='text'
+          autoComplete='off'
+          fullWidth
+        />
+        <TextField 
+          id='description'
+          name='description'
+          required
+          margin='dense'
+          label='Description'
+          variant='standard'
+          type='text'
+          autoComplete='off'
+          fullWidth
+          multiline
+        />
+        <Button
+          component="label"
+          role={undefined}
+          variant="contained"
+          tabIndex={-1}
+          startIcon={<CloudUpload />}
+          sx={{ marginTop: '8px', marginBottom: '4px' }}
+        >
+          Upload file
+          <VisuallyHiddenInput
+            type="file"
+            onChange={(event) => {
+              try {
+              console.log(event.target.files[0])
+
+              
+
+              handleFile(event.target.files[0])
+              } catch (error) {
+                console.log(error);
+                handleFile(null);
+              }
+            }}
+          />
+        </Button>
+        <Typography color={validFile}> {status} </Typography>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={handleClose}>Cancel</Button>
+        <Button type="submit" disabled={disableButton}>Submit</Button>
+      </DialogActions>
+    </Dialog>
+  )
+}
+
+Table.propTypes = {
+  setClearAll: PropTypes.func,
+}
+
+function Table({ setClearAll }) {
 
   const [data, setData] = useState([]);
   useEffect(() => {
@@ -227,6 +374,14 @@ const Table = () => {
         }
       }
       return newData;
+    }
+  }
+
+  const handleDeleteAll = () => {
+    if (window.confirm('Are you sure you want to delete all the data?')) {
+      clearAll();
+      setData([]);
+      setClearAll(true);
     }
   }
 
@@ -386,6 +541,14 @@ const Table = () => {
         >
           {'Generate Report'}
         </Button>
+        <Button
+          color='error'
+          variant='contained'
+          onClick={handleDeleteAll}
+          disabled={data.length == 0}
+        >
+          {'Delete All'}
+        </Button>
       </Box>
     ),
     renderTopToolbarCustomActions: () => (
@@ -422,146 +585,15 @@ const Table = () => {
       ) : null,
   });
 
-  // Modals for data entry
-  function AddPhotoForm() {
-
-    const [photo, setPhoto] = useState(new File([""], "empty"));
-    const [status, setStatus] = useState('');
-    const [validFile, setValidFile] = useState('');
-    const [disableButton, setDisableButton] = useState(true);
-
-    const checkFileValidity = (file) => {
-
-      if (!file) {
-        setValidFile('error');
-        setStatus('File could not be uploaded.')
-        setDisableButton(true);
-      }
-
-      let parts = file['name'].split('.');
-      let result = ['jpeg', 'jpg', 'png', 'raw', 'heic'].indexOf(parts[parts.length - 1]);
-
-      if (result < 0) {
-        setValidFile('error');
-        setStatus(`File "${file['name']}" has invalid file format.`);
-        setDisableButton(true);
-        return false;
-      } else {
-        setValidFile('success');
-        setStatus(`File "${file['name']}" uploaded`);
-        setDisableButton(false);
-        return true;
-      }
-    }
-
-    const handleFile = (file) => {
-      if (!checkFileValidity(file)) {
-        return;
-      }
-      setPhoto(file);
-    }
-
-    const handleClose = () => {
-      setPhoto(new File([''], 'empty'));
-      setDisableButton(true);
-      setStatus('');
-      setValidFile('');
-      setOpenAddForm(false);
-    }
-
-    return (
-      <Dialog
-        open={openAddForm}
-        onClose={handleClose}
-        PaperProps={{
-          component: 'form',
-          onSubmit: (event) => {
-            event.preventDefault();
-            const formData = new FormData(event.currentTarget);
-            const newData = Object.fromEntries(formData.entries());
-            
-            console.log(data);
-            console.log(data.at(-1))
-
-            const currentNumb = (data.length === 0) ? 0 : data.at(-1).numb;
-
-            let newPhoto = new Photo(photo, +currentNumb + 1, newData.photoNumb, newData.description);
-            console.log(newPhoto);
-            addPhoto(newPhoto).then((newId) => {
-              newPhoto.id = newId;
-              setData([...data, newPhoto]);
-            });
-
-            handleClose();
-          },
-        }}
-        fullWidth
-      >
-        <DialogTitle>Add Photo</DialogTitle>
-        <DialogContent>
-          <TextField
-            autoFocus
-            id='photoNumb'
-            name='photoNumb'
-            required
-            margin='dense'
-            label='Photo Number'
-            variant='standard'
-            type='text'
-            autoComplete='off'
-            fullWidth
-          />
-          <TextField 
-            id='description'
-            name='description'
-            required
-            margin='dense'
-            label='Description'
-            variant='standard'
-            type='text'
-            autoComplete='off'
-            fullWidth
-            multiline
-          />
-          <Button
-            component="label"
-            role={undefined}
-            variant="contained"
-            tabIndex={-1}
-            startIcon={<CloudUpload />}
-            sx={{ marginTop: '8px', marginBottom: '4px' }}
-          >
-            Upload file
-            <VisuallyHiddenInput
-              type="file"
-              onChange={(event) => {
-                try {
-                console.log(event.target.files[0])
-
-                
-
-                handleFile(event.target.files[0])
-                } catch (error) {
-                  console.log(error);
-                  handleFile(null);
-                }
-              }}
-            />
-          </Button>
-          <Typography color={validFile}> {status} </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose}>Cancel</Button>
-          <Button type="submit" disabled={disableButton}>Submit</Button>
-        </DialogActions>
-      </Dialog>
-    )
-  }
-
   return (
     <>
       <MaterialReactTable table={table} />
-      <AddPhotoForm />
+      <AddPhotoForm
+        data={data}
+        setData={setData}
+        openAddForm={openAddForm}
+        setOpenAddForm={setOpenAddForm}
+      />
     </>
   )
 };
