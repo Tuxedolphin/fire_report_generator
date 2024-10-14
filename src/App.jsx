@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import './App.css'
 import Table from './Table.jsx'
 import StoragePopup from './PersistentStoragePopup.jsx'
@@ -10,11 +10,11 @@ function App() {
 
   return (
     <>
-      <StoragePopup/>
+      <StoragePopup  />
       <div className={'menu'}>
-        <Menu />
+        <Menu clearAll={clearAll} setClearAll={setClearAll} />
       </div>
-      <Table />
+      <Table setClearAll={setClearAll} />
     </>
   )
 }

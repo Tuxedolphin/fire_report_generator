@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import PropTypes from "prop-types";
 import { Typography, Box, TextField, InputAdornment, Switch, Stack } from "@mui/material";
 import Grid from '@mui/material/Grid2';
 
@@ -11,7 +12,12 @@ function saveInput(event) {
   localStorage.setItem(event.target.id, event.target.value);
 }
 
-function Menu() {
+Menu.propTypes = {
+  clearAll: PropTypes.bool,
+  setClearAll: PropTypes.func,
+};
+
+function Menu({ clearAll, setClearAll }) {
 
   const [incNumb, setIncNumber] = useState('');
   const [bagNumb, setBagNumber] = useState('');
@@ -27,7 +33,24 @@ function Menu() {
     setLocation(localStorage.getItem('location') ? localStorage.getItem('location') : '');
     setPostalCode(localStorage.getItem('postalCode') ? localStorage.getItem('postalCode') : '');
     setC1acc((JSON.parse(localStorage.getItem('c1acc') === null)) ? false : JSON.parse(localStorage.getItem('c1acc')));
+  
   }, [])
+
+  // If clearAll is called, remove all items and then reset
+  useEffect(() => {
+    if (clearAll) {
+
+      localStorage.clear();
+
+      setIncNumber('');
+      setBagNumber('');
+      setLocation('');
+      setPostalCode('');
+      setC1acc(false);
+
+      setClearAll(false);
+    }
+  }, [clearAll, setClearAll]);
 
 
   return (
@@ -89,7 +112,6 @@ function Menu() {
             label='Postal Code' 
             variant='standard'
             fullWidth
-            required
             value={postalCode}
             slotProps={{
               input: {
