@@ -4,7 +4,7 @@ This application is for automatically formatting and generating the photo sectio
 
 ## Getting Started
 
-You can visit the website by clicking <a>here</a>.
+You can visit the website by clicking <a href="https://tuxedolphin.github.io/fire_report_generator/">here</a>.
 > [!NOTE]
 > If you are prompted to allow persistent storage, please allow it for this webpage.
 
