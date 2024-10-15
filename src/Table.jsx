@@ -216,6 +216,7 @@ Table.propTypes = {
 function Table({ setClearAll }) {
 
   const [data, setData] = useState([]);
+  const [pagination, setPagination] = useState({});
   useEffect(() => {
     retrieveAll().then((items) => {
       let newData = items.map((entry) => {
@@ -230,7 +231,23 @@ function Table({ setClearAll }) {
         }
       ));
     });
+
+    console.log(localStorage.getItem("pageIndex"));
+
+    setPagination({
+      pageSize: localStorage.getItem("pageSize") ? localStorage.getItem("pageSize") : 25,
+      pageIndex: 0,
+    })
+
   }, []);
+
+  useEffect(() => {
+
+    if (Object.keys(pagination).length !== 0) {
+      localStorage.setItem("pageSize", pagination.pageSize);
+    }
+
+  }, [pagination]);
   
   const [editedRows, setEditedRows] = useState({}); // Holds the rows which were changed
   const [openAddForm, setOpenAddForm] = useState(false); // Holds if add photo form should be opened
@@ -413,6 +430,7 @@ function Table({ setClearAll }) {
     enableRowOrdering: true,
     enableSorting: false,
     enableColumnResizing: true,
+    autoResetPageIndex: false,
     initialState: {
       columnPinning: { right: ['mrt-row-actions'] },
     },
@@ -422,6 +440,8 @@ function Table({ setClearAll }) {
         grow: false,
       }
     },
+    state: { pagination },
+    onPaginationChange: setPagination,
     muiRowDragHandleProps: ({ table }) => ({
       onDragEnd: () => {
         const { draggingRow, hoveredRow } = table.getState();
