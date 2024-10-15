@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://github.com/Tuxedolphin/fire_report_generator",
+  "homepage": "https://tuxedolphin.github.io/fire_report_generator",
   "scripts": {
     "dev": "vite",
     "predeploy": "npm run build",
