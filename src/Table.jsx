@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import {
   addPhoto,
   updatePhoto,
@@ -139,14 +139,10 @@ function AddPhotoForm({ openAddForm, setOpenAddForm, data, setData }) {
           event.preventDefault();
           const formData = new FormData(event.currentTarget);
           const newData = Object.fromEntries(formData.entries());
-          
-          console.log(data);
-          console.log(data.at(-1))
 
           const currentNumb = (data.length === 0) ? 0 : data.at(-1).numb;
 
           let newPhoto = new Photo(photo, +currentNumb + 1, newData.photoNumb, newData.description);
-          console.log(newPhoto);
           addPhoto(newPhoto).then((newId) => {
             newPhoto.id = newId;
             setData([...data, newPhoto]);
@@ -195,10 +191,6 @@ function AddPhotoForm({ openAddForm, setOpenAddForm, data, setData }) {
             type="file"
             onChange={(event) => {
               try {
-              console.log(event.target.files[0])
-
-              
-
               handleFile(event.target.files[0])
               } catch (error) {
                 console.log(error);
@@ -300,9 +292,6 @@ function Table({ setClearAll }) {
   // Saves the data in the data array into IndexedDB
   const handleSave = async () => {
 
-    console.log(data);
-    console.log(editedRows);
-
     // Convert the array to an object for easy access of the ID
     const hashedData = {};
     
@@ -312,11 +301,9 @@ function Table({ setClearAll }) {
    
     for (const [id, edits] of Object.entries(editedRows)) {
       let newPhoto = {...hashedData[id]};
-      console.log(newPhoto);
       for (const [key, value] of Object.entries(edits)) {
         newPhoto[key] = value;
       }
-      console.log(newPhoto)
       updatePhoto(newPhoto).then((success) => {
           if (success) {
             setEditedRows({});
@@ -332,16 +319,13 @@ function Table({ setClearAll }) {
   const createCopy = (image) => {
     
     let newCopy = image.createCopy();
-    console.log(newCopy)
     addPhoto(newCopy).then((newId) => {
       newCopy.id = newId;
 
       const originalIndex = data.indexOf(image);
 
       let newData = [...data];
-      console.log(newData[originalIndex]);
       newData[originalIndex].hasCopy = newId;
-      console.log(newData[originalIndex]);
       updatePhoto(image);
 
       newData.splice(originalIndex + 1, 0, newCopy);
@@ -375,6 +359,7 @@ function Table({ setClearAll }) {
     if (photo.copyOf) {
       const index = newData.findIndex((element) => element.id == photo.copyOf);
       newData[index].hasCopy = null;
+      updatePhoto(newData[index]);
       return newData;
 
     } else {
@@ -461,6 +446,7 @@ function Table({ setClearAll }) {
             numbRowMove = 2;
             drag--;
           }
+
           // The row that was dragged to cannot be between a copy and its original (Splitting them
           // to address the out of index issue)
           if (data[hoveredRow.index].hasCopy && hover > drag) {
@@ -473,20 +459,17 @@ function Table({ setClearAll }) {
             if (hover < data.length - 1) {
               hover += 1;
             }
-          }
+          } 
+
 
           if (hover === drag) return;
           
           const firstIndex = (drag > hover) ? hover : (hover - numbRowMove + 1);
           
           newData.splice(firstIndex, 0, ...newData.splice(drag, numbRowMove));
-          console.log(newData);
-          console.log(data);
           
           const a = data[hoveredRow.index].copyOf ? data[hoveredRow.index].numb + 1 : data[hoveredRow.index].numb;
           const b = data[draggingRow.index].numb;
-          
-          console.log(a, b);
 
           // Updating the picture order numbers
           let wasCopy = false;
@@ -512,7 +495,6 @@ function Table({ setClearAll }) {
           for (const photo of newEditedRows) {
             copyEditedRows = {...copyEditedRows, [photo.id]: {...copyEditedRows[photo.id], ['numb']: photo.numb}};
           }
-          console.log(copyEditedRows);
           setEditedRows(copyEditedRows);
           setData(newData);
         }
@@ -542,8 +524,7 @@ function Table({ setClearAll }) {
           color="success"
           variant="contained"
           onClick={() => {
-            console.log(data);
-            handleSave()
+            handleSave();
           }}
           disabled={Object.keys(editedRows).length === 0}
           >
