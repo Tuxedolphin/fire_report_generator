@@ -440,8 +440,9 @@ function generatePhotoAnnex(photos) {
 
     } else {
 
-      let slide = pptx.addSlide();
-      let photo = photos[i];
+      // TODO: Update first half to fix the need for this
+      let photo = firstPhoto;
+      let ratio = firstRatio;
 
       formatPage(slide);
 
@@ -453,8 +454,6 @@ function generatePhotoAnnex(photos) {
       const leftW = 1.858268;
       const rightW = 1.625984;
       
-      let ratio = getAspectRatio(photo);
-
       const imgDimension = {
         w: width.p,
         h: width.p * ratio
@@ -474,20 +473,21 @@ function generatePhotoAnnex(photos) {
         w: 3.66142,
         valign: "top",
         fontSize: 12,
+        margin: 0,
       };;
 
       // For when there is only one portrait photo on the slide
       if (i == photos.length - 1 || photos[i + 1].isLandscape || photos[i + 1].hasCopy) {
 
         slide.addImage({
+          ...imgDimension,
           x: defaultX.pc,
           y: defaultY.p + (4.645669 - imgDimension.h),
-          ...imgDimension,
           path: photo.image.src,
           sizing: { type: "contain", ...imgDimension },
         });
 
-        slide.addText(`${photo.copyOf ? "COPY OF" : ""} PHOTO ${photo.numb}`, {
+        slide.addText(`${photo.copyOf ? "COPY OF " : ""}PHOTO ${photo.numb}`, {
           ...topTextFormat,
           x: defaultX.pc,
           w: leftW,
@@ -495,7 +495,7 @@ function generatePhotoAnnex(photos) {
 
         slide.addText(photo.photoUIDNumb, {
           ...topTextFormat,
-          x: defaultX.pc,
+          x: 3.93701,
           w: rightW,
           align: "right"
         });
@@ -515,14 +515,14 @@ function generatePhotoAnnex(photos) {
           
           // Formatting of image and its descriptions
           slide.addImage({
+            ...imgDimension,
             x: leftX,
             y: defaultY.p + (4.645669 - imgDimension.h),
-            ...imgDimension,
             path: photo.image.src,
             sizing: { type: "contain", ...imgDimension }
           });
   
-          slide.addText(`PHOTO ${photo.numb}`, {
+          slide.addText(`${photo.copyOf ? "COPY OF" : ""} PHOTO ${photo.numb}`, {
             ...topTextFormat,
             x: leftX,
             w: leftW,
@@ -545,8 +545,8 @@ function generatePhotoAnnex(photos) {
           rightX = 5.7165354;
           photo = photos[i + 1];
 
-          if (Math.abs(getAspectRatio(photo) - ratio) > 0.0001) {
-            ratio = getAspectRatio(photo);
+          if (Math.abs(getAspectRatio(photo.image) - ratio) > 0.0001) {
+            ratio = getAspectRatio(photo.image);
           }
         }
         i++;
@@ -671,7 +671,7 @@ async function generateReport(photos) {
   
   generatePhotoAnnex(photos);
 
-  pptx.writeFile({ fileName: `${incNumb.replace("/", "-")}-location` });
+  pptx.writeFile({ fileName: `${incNumb.replace("/", "-")}-${location}` });
 
 }
 
