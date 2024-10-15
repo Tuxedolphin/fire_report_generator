@@ -8,8 +8,16 @@ import '@fontsource/roboto/400.css';
 import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
 
+const regex = new RegExp('20\\d{6}/\\d{4}');
+
 function saveInput(event) {
   localStorage.setItem(event.target.id, event.target.value);
+}
+
+function validateIncidentNumb(value) {
+  if (!regex.test(value)) return false;
+  return !isNaN(Date.parse(`${value.slice(0, 4)}-${value.slice(4, 6)}-${value.slice(6, 8)}`));
+
 }
 
 Menu.propTypes = {
@@ -52,6 +60,7 @@ function Menu({ clearAll, setClearAll }) {
     }
   }, [clearAll, setClearAll]);
 
+  const [incNumbError, setIncNumbError] = useState('');
 
   return (
     <Box sx={{ width: '100%', maxWidth: '80vw', flexGrow: 1, marginBottom: '25px',  textAlign: 'center'}}>
@@ -66,7 +75,20 @@ function Menu({ clearAll, setClearAll }) {
             required
             value={incNumb}
             onChange={(event) => {setIncNumber(event.target.value)}}
-            onBlur={(event) => {saveInput(event)}}
+            onBlur={(event) => {
+              if (event.target.value.length === 0) {
+                setIncNumbError('');
+                return;
+              }
+              if (validateIncidentNumb(event.target.value)) {
+                saveInput(event);
+                setIncNumbError('');
+              } else {
+                setIncNumbError('Please use the format YYYYMMDD/XXXX')
+              }
+            }}
+            error={!!incNumbError}
+            helperText={incNumbError}
           />
         </Grid>
         <Grid size={4}>
