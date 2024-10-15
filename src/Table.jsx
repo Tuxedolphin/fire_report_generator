@@ -471,13 +471,13 @@ function Table({ setClearAll }) {
           // to address the out of index issue)
           if (data[hoveredRow.index].hasCopy && hover > drag) {
             if (numbRowMove === 2) {
-              hover += 1
+              hover += 1;
             } else if (numbRowMove === 1) {
               hover += (drag < hover ? 1 : 2);
             }
           } else if (data[hoveredRow.index].copyOf) {
             if (hover < data.length - 1) {
-              hover += 1;
+              hover += (numbRowMove === 2 ? 2 : 1);
             }
           } 
 
