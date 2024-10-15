@@ -174,7 +174,6 @@ function AddPhotoForm({ openAddForm, setOpenAddForm, data, setData }) {
         <TextField 
           id='description'
           name='description'
-          required
           margin='dense'
           label='Description'
           variant='standard'
@@ -250,32 +249,52 @@ function Table({ setClearAll }) {
         accessorKey: 'displayedNumb',
         header: '#',
         enableEditing: false,
+        enableResizing: false,
+        grow: false,
+        size: 50,
       },
       {
         accessorKey: 'photoNumb',
         header: 'Photo Number',
+        required: true,
         muiEditTextFieldProps: ({ cell, row }) => ({
           type: 'text',
-          required: true,
           onBlur: (event) => {
-            setEditedRows({ ...editedRows, [row.original.id]: {...editedRows[row.original.id], [cell.column.id]: event.target.value}});
+            let index = null;
+            let newEditedRows = { ...editedRows };
+            let newData = [...data];
+            if (row.original.hasCopy || row.original.copyOf) {
+              index = row.original.hasCopy
+                      ? data.findIndex((item) => item.id == row.original.hasCopy)
+                      : data.findIndex((item) => item.id == row.original.copyOf);
+
+              newEditedRows = { ...newEditedRows, [data[index].id]: {...editedRows[data[index].id], [cell.column.id]: event.target.value}};
+              newData[index].photoNumb = event.target.value;
+            }
+            setEditedRows({
+              ...newEditedRows,
+              [row.original.id]: {...editedRows[row.original.id], [cell.column.id]: event.target.value},
+            });
+            newData[data.indexOf(row.original)].photoNumb = event.target.value;
+            setData(newData);
           }
         }),
       },
       {
         accessorKey: 'description',
         header: 'Description',
-        size: 400,
+        required: true,
+        enableResizing: false,
+        grow: 10,
         muiEditTextFieldProps: ({ cell, row }) => ({
           type: 'text',
-          required: true,
           onBlur: (event) => {
             setEditedRows({ ...editedRows, [row.original.id]: {...editedRows[row.original.id], [cell.column.id]: event.target.value}});
           }
         }),
       },
     ],
-    [editedRows],
+    [data, editedRows],
   );
 
   // Saves the data in the data array into IndexedDB
@@ -393,9 +412,6 @@ function Table({ setClearAll }) {
     if (!localStorage.getItem('location')) {
       return "Please key in the location.";
     }
-    if (!localStorage.getItem('postalCode')) {
-      return "Please key in the postal code.";
-    }
     if (data.length === 0) {
       return "Please add at least one photo";
     }
@@ -414,6 +430,12 @@ function Table({ setClearAll }) {
     enableColumnResizing: true,
     initialState: {
       columnPinning: { right: ['mrt-row-actions'] },
+    },
+    layoutMode: 'grid-no-grow',
+    displayColumnDefOptions: {
+      'mrt-row-actions': {
+        grow: false,
+      }
     },
     muiRowDragHandleProps: ({ table }) => ({
       onDragEnd: () => {
@@ -576,11 +598,12 @@ function Table({ setClearAll }) {
           sx={{
             display: 'flex',
             margin: 'auto',
-            width: '100%',
+            width: '96vw',
             justifyContent: 'center',
+            alignItems: 'center',
           }}
         >
-          <img src={row.original.image.src} style={{'width' : '40%'}}></img>
+          <img src={row.original.image.src} style={{'width' : '25%'}}></img>
         </Box>
       ) : null,
   });
