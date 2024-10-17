@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import {
   addPhoto,
   updatePhoto,
@@ -248,8 +248,26 @@ function Table({ setClearAll }) {
     }
 
   }, [pagination]);
-  
-  const [editedRows, setEditedRows] = useState({}); // Holds the rows which were changed
+
+  // Saves the data in the data array into IndexedDB
+  const updateCell = useCallback(async (columnID, photo, index, newValue) => {
+
+    if (photo[columnID] == newValue) return; 
+            
+    let newData = [...data];
+
+    newData[index][columnID] = newValue;
+    updatePhoto(newData[index]);
+    
+    if (columnID == "photoNumb" && (photo.hasCopy || photo.copyOf)) {
+      index = photo.hasCopy ? index + 1 : index - 1;
+      newData[index][columnID] = newValue;
+      updatePhoto(newData[index]);
+    }
+
+    setData(newData);
+  }, [data]);
+
   const [openAddForm, setOpenAddForm] = useState(false); // Holds if add photo form should be opened
 
   const columns = useMemo(
@@ -269,23 +287,7 @@ function Table({ setClearAll }) {
         muiEditTextFieldProps: ({ cell, row }) => ({
           type: 'text',
           onBlur: (event) => {
-            let index = null;
-            let newEditedRows = { ...editedRows };
-            let newData = [...data];
-            if (row.original.hasCopy || row.original.copyOf) {
-              index = row.original.hasCopy
-                      ? data.findIndex((item) => item.id == row.original.hasCopy)
-                      : data.findIndex((item) => item.id == row.original.copyOf);
-
-              newEditedRows = { ...newEditedRows, [data[index].id]: {...editedRows[data[index].id], [cell.column.id]: event.target.value}};
-              newData[index].photoNumb = event.target.value;
-            }
-            setEditedRows({
-              ...newEditedRows,
-              [row.original.id]: {...editedRows[row.original.id], [cell.column.id]: event.target.value},
-            });
-            newData[data.indexOf(row.original)].photoNumb = event.target.value;
-            setData(newData);
+            updateCell(cell.column.id, row.original, +row.id, event.target.value);
           }
         }),
       },
@@ -297,40 +299,12 @@ function Table({ setClearAll }) {
         grow: 10,
         muiEditTextFieldProps: ({ cell, row }) => ({
           type: 'text',
-          onBlur: (event) => {
-            setEditedRows({ ...editedRows, [row.original.id]: {...editedRows[row.original.id], [cell.column.id]: event.target.value}});
-          }
+          onBlur: (event) => {updateCell(cell.column.id, row.original, +row.id, event.target.value);}
         }),
       },
     ],
-    [data, editedRows],
+    [updateCell],
   );
-
-  // Saves the data in the data array into IndexedDB
-  const handleSave = async () => {
-
-    // Convert the array to an object for easy access of the ID
-    const hashedData = {};
-    
-    data.forEach((value) => {
-      hashedData[value.id] = value;
-    });
-   
-    for (const [id, edits] of Object.entries(editedRows)) {
-      let newPhoto = {...hashedData[id]};
-      for (const [key, value] of Object.entries(edits)) {
-        newPhoto[key] = value;
-      }
-      updatePhoto(newPhoto).then((success) => {
-          if (success) {
-            setEditedRows({});
-          } else {
-            console.log(`Failure to update photos, array given by:`);
-            console.log(editedRows);
-          }
-        });
-      }
-    }
 
   // Handles what happens when the create copy button is clicked
   const createCopy = (image) => {
@@ -382,8 +356,8 @@ function Table({ setClearAll }) {
       
       let wasCopy = false;
 
-      for (let number = photo.numb, maxNumb = newData.at(-1).numb, index = data.indexOf(photo);
-        number <= maxNumb, index < newData.length;
+      for (let number = photo.numb, index = data.indexOf(photo);
+        index < newData.length;
         number++, index++
       ) {
         if (newData[index].copyOf && !wasCopy) {
@@ -406,7 +380,7 @@ function Table({ setClearAll }) {
       setData([]);
       setClearAll(true);
     }
-  }
+  };
 
   const verifyGenerateReport = () => {
     console.log(localStorage.getItem('incidentNumb'));
@@ -421,7 +395,7 @@ function Table({ setClearAll }) {
     }
 
     return "";
-  }
+  };
 
   const table = useMaterialReactTable({
     columns,
@@ -534,16 +508,6 @@ function Table({ setClearAll }) {
     ],
     renderBottomToolbarCustomActions: () => (
       <Box sx={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-        <Button
-          color="success"
-          variant="contained"
-          onClick={() => {
-            handleSave();
-          }}
-          disabled={Object.keys(editedRows).length === 0}
-          >
-          {'Save'}
-        </Button>
         <Button
           color='primary'
           variant='contained'
