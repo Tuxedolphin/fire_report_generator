@@ -348,7 +348,6 @@ function Table({ setClearAll }) {
       newData.splice(originalIndex + 1, 0, newCopy);
 
       setData(newData);
-
     });
   }
 
@@ -369,30 +368,33 @@ function Table({ setClearAll }) {
   };
 
   const handleDelete = (photo, data) => {
+    
     deletePhoto(photo.id);
-
     let newData = data.filter((element) => {return (photo.id != element.id)});
-
+    
     if (photo.copyOf) {
       const index = newData.findIndex((element) => element.id == photo.copyOf);
       newData[index].hasCopy = null;
       updatePhoto(newData[index]);
       return newData;
-
-    } else {
-
-      let wasCopy = false; // To keep track of if the previous photo was a copy - prevent infinite loop
       
-      // We only need to update the numbers if the photo deleted is not a copy
-      for (let i = data.indexOf(photo); i < newData.length; i++) {
-        if (newData[i].copyOf && !wasCopy) {
-          newData[i].updateNumb(i);
-          i--;
+    } else {
+      
+      let wasCopy = false;
+
+      for (let number = photo.numb, maxNumb = newData.at(-1).numb, index = data.indexOf(photo);
+        number <= maxNumb, index < newData.length;
+        number++, index++
+      ) {
+        if (newData[index].copyOf && !wasCopy) {
+          number--;
+          newData[index].updateNumb(number);
           wasCopy = true;
         } else {
-          newData[i].updateNumb(i + 1);
+          newData[index].updateNumb(number);
           wasCopy = false;
         }
+        updatePhoto(newData[index]);
       }
       return newData;
     }
@@ -493,7 +495,6 @@ function Table({ setClearAll }) {
 
           // Updating the picture order numbers
           let wasCopy = false;
-          let newEditedRows = [];
 
           for (let i = Math.min(a, b), max = Math.max(a, b), index = Math.min(drag, hover), maxIndex = data.length;
             i <= max, index < maxIndex;
@@ -502,20 +503,13 @@ function Table({ setClearAll }) {
             if (newData[index].copyOf && !wasCopy) {
               i--;
               newData[index].updateNumb(i);
-              newEditedRows.push({['id']: newData[index].id, ['numb']: i});
               wasCopy = true;
             } else {
               newData[index].updateNumb(i);
-              newEditedRows.push({['id']: newData[index].id, ['numb']: i});
               wasCopy = false;
             }
+            updatePhoto(newData[index]);
           }
-          // Update array into the current editedRows
-          let copyEditedRows = {...editedRows};
-          for (const photo of newEditedRows) {
-            copyEditedRows = {...copyEditedRows, [photo.id]: {...copyEditedRows[photo.id], ['numb']: photo.numb}};
-          }
-          setEditedRows(copyEditedRows);
           setData(newData);
         }
       },
