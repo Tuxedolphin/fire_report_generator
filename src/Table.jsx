@@ -20,11 +20,12 @@ import {
   DialogTitle,
   DialogActions,
   DialogContent,
+  DialogContentText,
   TextField,
   styled,
 } from '@mui/material';
 import { Delete, Add, CloudUpload } from '@mui/icons-material';
-import PropTypes from "prop-types";
+import PropTypes, { bool } from "prop-types";
 import generateReport from './generateReport.jsx';
 
 // Hidden Input For Adding Functionality To Some Buttons
@@ -73,6 +74,81 @@ class Photo {
   getOrientation() {
     return (this.image.width > this.image.height) ? "landscape" : "portrait"
   }
+}
+
+DeleteConfirmDialog.propTypes = {
+  open: PropTypes.bool,
+  setOpen: PropTypes.func, 
+  data: PropTypes.array,
+  setData: PropTypes.func,
+  deleteId: PropTypes.number,
+  handleDelete: PropTypes.func,
+  handleDeleteAll: PropTypes.func,
+}
+
+/**
+ * Dialog to prompt user if they are sure they want to delete (all) the photo.
+ * @param {Object} param0 
+ * Note that for deleteId, < 0 means to delete all, > 0 means the index of the photo to delete,
+ * and 0 is the default value
+ * @returns React component
+ */
+function DeleteConfirmDialog({ open, setOpen, data, setData, deleteId, handleDelete, handleDeleteAll }) {
+
+  const handleClose = () => {
+    setOpen(false);
+  };
+
+  const deletePhoto = () => {
+
+    let newData = [...data];
+
+    // If it has a copy, the copy needs to be deleted as well
+    if (data[deleteId].hasCopy) {
+      newData = handleDelete(data.find((element) => element.id == data[deleteId].hasCopy), newData);
+    }
+    newData = handleDelete(data[deleteId], newData);
+
+    setData(newData);
+  }
+
+  return (
+    <>
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">
+          {`Permanently delete ${deleteId > 0 ? "photo" : "all"}?`}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            Do you really want to delete { deleteId < 0 ? "all the photos" : "the photo" }? 
+            This process cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClose}>Cancel</Button>
+          <Button
+            onClick={() => {
+              if (deleteId < 0) {
+                handleDeleteAll();
+                handleClose();
+              } else if (deleteId > 0) {
+                deletePhoto();
+                handleClose();
+              } else console.log("ERROR: Invalid deleteId")
+            }}
+            autoFocus
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
+  );
 }
 
 AddPhotoForm.propTypes = {
@@ -220,6 +296,12 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
 
   const [data, setData] = useState([]);
   const [pagination, setPagination] = useState({});
+  const [validPhotoNumb, setValidPhotoNumb] = useState('');
+
+  const [openAddForm, setOpenAddForm] = useState(false); // Holds if add photo form should be opened
+  const [openDelete, setOpenDelete] = useState(false); // Holds if delete photo modal should be opened
+  const [deleteId, setDeleteId] = useState(0); // Holds if need to delete all and the index of what to delete
+
   useEffect(() => {
     retrieveAll().then((items) => {
       let newData = items.map((entry) => {
@@ -269,8 +351,6 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
     setData(newData);
   }, [data]);
 
-  const [openAddForm, setOpenAddForm] = useState(false); // Holds if add photo form should be opened
-
   const columns = useMemo(
     () => [
       {
@@ -287,8 +367,20 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
         required: true,
         muiEditTextFieldProps: ({ cell, row }) => ({
           type: 'text',
+          required: true,
+          error: !!validPhotoNumb,
+          helperText: validPhotoNumb,
+          onChange: (event) => {
+            if (!event.target.value) {
+              setValidPhotoNumb('Required');
+            } else if (validPhotoNumb) {
+              setValidPhotoNumb('');
+            }
+          },
+          // TODO: On blur, if there's error, return to original and give error message
           onBlur: (event) => {
-            updateCell(cell.column.id, row.original, +row.id, event.target.value);
+            if (!validPhotoNumb)
+              updateCell(cell.column.id, row.original, +row.id, event.target.value);
           }
         }),
       },
@@ -306,7 +398,7 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
         }),
       },
     ],
-    [updateCell],
+    [updateCell, validPhotoNumb],
   );
 
   // Handles what happens when the create copy button is clicked
@@ -329,19 +421,15 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
   }
 
   // Opens the delete modal, then handles the deletion of a photo
-  const openDeleteConfirmModal = (row) => {
-    if (window.confirm('Are you sure you want to delete this photo?')) {
-
-      let newData = [...data];
-
-      // If it has a copy, the copy needs to be deleted as well
-      if (row.original.hasCopy) {
-        newData = handleDelete(data.find((element) => element.id == row.original.hasCopy), newData);
-      }
-      newData = handleDelete(row.original, newData);
-
-      setData(newData);
+  const openDeleteConfirmModal = (deleteId, row=[]) => {
+    
+    if (!deleteId) {
+      deleteId = data.indexOf(row.original);
     }
+    
+    setDeleteId(deleteId);
+    setOpenDelete(true);
+  
   };
 
   const handleDelete = (photo, data) => {
@@ -379,11 +467,9 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
   }
 
   const handleDeleteAll = () => {
-    if (window.confirm('Are you sure you want to delete all the data?')) {
-      clearAll();
-      setData([]);
-      setClearAll(true);
-    }
+    clearAll();
+    setData([]);
+    setClearAll(true);
   };
 
   const table = useMaterialReactTable({
@@ -493,7 +579,7 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
         icon={<Delete />}
         key="delete"
         label="Delete"
-        onClick={() => openDeleteConfirmModal(row)}
+        onClick={() => openDeleteConfirmModal(0, row)}
         table={table}
       />,
     ],
@@ -513,7 +599,7 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
             } else {
               newError = { ...newError, numbEntry: '' };
             }
-            
+
             if (!localStorage.getItem("incidentNumb")) {
               newError = { ...newError, 'incidentNumb': 'Please key in the incident number'};
             }
@@ -532,7 +618,6 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
 
             if (haveError) setCreateStack(true);
             else generateReport(data);
-            
           }}
         >
           {'Generate Report'}
@@ -540,7 +625,7 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
         <Button
           color='error'
           variant='contained'
-          onClick={handleDeleteAll}
+          onClick={() => openDeleteConfirmModal(-1)}
           disabled={data.length == 0}
         >
           {'Delete All'}
@@ -590,6 +675,15 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
         setData={setData}
         openAddForm={openAddForm}
         setOpenAddForm={setOpenAddForm}
+      />
+      <DeleteConfirmDialog
+        open={openDelete}
+        setOpen={setOpenDelete}
+        data={data}
+        setData={setData}
+        deleteId={deleteId}
+        handleDelete={handleDelete}
+        handleDeleteAll={handleDeleteAll}
       />
     </>
   )
