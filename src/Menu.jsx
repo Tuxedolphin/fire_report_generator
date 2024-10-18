@@ -142,9 +142,9 @@ function Menu({ clearAll, setClearAll, error, setError }) {
           helperText={error.bagNumb}
           />
         </Grid>
-        <Grid size = {4}>
-          <Typography>Report Type:</Typography>
-          <Stack direction='row' spacing={1} sx={{ alignItems: 'center' }}>
+        <Grid size = {4} sx={{alignItems: 'center'}}>
+          <Typography sx={{alignItems: 'center'}}>Report Type:</Typography>
+          <Stack direction='row' spacing={1} sx={{ justifyContent: 'center', alignItems: 'center', width: '100%'}}>
             <Typography>Full Report</Typography>
             <Switch
               checked={c1acc}
