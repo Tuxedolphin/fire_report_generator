@@ -169,7 +169,7 @@ function Menu({ clearAll, setClearAll, error, setError }) {
             setLocation(event.target.value);
           }}
           onBlur={(event) => {
-            if (event.target.value) {
+            if (!event.target.value) {
               setError({ ...error, location: ''});
             }
             saveInput(event);

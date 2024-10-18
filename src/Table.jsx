@@ -469,6 +469,13 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
   const handleDeleteAll = () => {
     clearAll();
     setData([]);
+    setError({
+      incidentNumb: '',
+      bagNumb: '',
+      location: '',
+      postalCode: '',
+      numbEntry: '',
+    });
     setClearAll(true);
   };
 
