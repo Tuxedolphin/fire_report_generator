@@ -515,10 +515,10 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
             }
             
             if (!localStorage.getItem("incidentNumb")) {
-              setError({ ...error, 'incidentNumb': 'Please key in the incident number'});
+              newError = { ...newError, 'incidentNumb': 'Please key in the incident number'};
             }
             if (!localStorage.getItem('location')) {
-              setError({ ...error, 'location': "Please key in the location"})
+              newError = { ...newError, 'location': "Please key in the location"};
             }
 
             for (const value of Object.values(newError)) {

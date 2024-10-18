@@ -23,19 +23,19 @@ const Snackbars = ({ error, createStack, setCreateStack }) => {
       for (const [key, value] of Object.entries(error)) {
         if (key !== 'numbEntry') {
           if (value) {
-            message = message + ' the input field at the top is filled up and has no errors';
+            message = message + ' the input field at the top is filled up correctly';
             break;
           }
         }
       }
       
       if (error.numbEntry) {
-        message = message + ` ${(message !== 'Please ensure that') ? 'and' : ''}` + "there is at least one photo entry"
+        message = message + ` ${(message !== 'Please ensure that') ? 'and' : ''}` + " there is at least one photo entry"
       }
       
       if (message === 'Please ensure that') return;
 
-      setMessageInfo(message);
+      setMessageInfo(message + '.');
       setOpen(true);
       setCreateStack(false);
   } 

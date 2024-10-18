@@ -117,6 +117,7 @@ function Menu({ clearAll, setClearAll, error, setError }) {
             fullWidth
             required
             value={incNumb}
+            autoComplete='off'
             onChange={(event) => {setIncNumber(event.target.value)}}
             onBlur={(event) => {
               validateInput(event);
@@ -132,6 +133,7 @@ function Menu({ clearAll, setClearAll, error, setError }) {
           variant='standard'
           fullWidth
           value={bagNumb}
+          autoComplete='off'
           onChange={(event) => {setBagNumber(event.target.value)}}
           onBlur={(event) => {
             validateInput(event);
@@ -161,11 +163,19 @@ function Menu({ clearAll, setClearAll, error, setError }) {
           variant='standard' 
           fullWidth 
           required
+          autoComplete='off'
           value={location}
           onChange={(event) => {
             setLocation(event.target.value);
           }}
-          onBlur={(event) => {saveInput(event)}}
+          onBlur={(event) => {
+            if (event.target.value) {
+              setError({ ...error, location: ''});
+            }
+            saveInput(event);
+          }}
+          error={!!error.location}
+          helperText={error.location}
           />
         </Grid>
         <Grid size={4}>
@@ -175,6 +185,7 @@ function Menu({ clearAll, setClearAll, error, setError }) {
             variant='standard'
             fullWidth
             value={postalCode}
+            autoComplete='off'
             slotProps={{
               input: {
                 startAdornment: <InputAdornment position='start'>Singapore</InputAdornment>,
