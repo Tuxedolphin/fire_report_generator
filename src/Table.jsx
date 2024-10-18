@@ -210,10 +210,13 @@ function AddPhotoForm({ openAddForm, setOpenAddForm, data, setData }) {
 }
 
 Table.propTypes = {
+  error: PropTypes.object,
+  setError: PropTypes.func,
   setClearAll: PropTypes.func,
+  setCreateStack: PropTypes.func,
 }
 
-function Table({ setClearAll }) {
+function Table({ error, setError, setClearAll, setCreateStack }) {
 
   const [data, setData] = useState([]);
   const [pagination, setPagination] = useState({});
@@ -231,8 +234,6 @@ function Table({ setClearAll }) {
         }
       ));
     });
-
-    console.log(localStorage.getItem("pageIndex"));
 
     setPagination({
       pageSize: localStorage.getItem("pageSize") ? localStorage.getItem("pageSize") : 25,
@@ -299,7 +300,9 @@ function Table({ setClearAll }) {
         grow: 10,
         muiEditTextFieldProps: ({ cell, row }) => ({
           type: 'text',
-          onBlur: (event) => {updateCell(cell.column.id, row.original, +row.id, event.target.value);}
+          onBlur: (event) => {
+            updateCell(cell.column.id, row.original, +row.id, event.target.value);
+          }
         }),
       },
     ],
@@ -347,6 +350,7 @@ function Table({ setClearAll }) {
     let newData = data.filter((element) => {return (photo.id != element.id)});
     
     if (photo.copyOf) {
+
       const index = newData.findIndex((element) => element.id == photo.copyOf);
       newData[index].hasCopy = null;
       updatePhoto(newData[index]);
@@ -380,21 +384,6 @@ function Table({ setClearAll }) {
       setData([]);
       setClearAll(true);
     }
-  };
-
-  const verifyGenerateReport = () => {
-    console.log(localStorage.getItem('incidentNumb'));
-    if (!localStorage.getItem('incidentNumb')) {
-      return "Please key in incident number.";
-    }
-    if (!localStorage.getItem('location')) {
-      return "Please key in the location.";
-    }
-    if (data.length === 0) {
-      return "Please add at least one photo";
-    }
-
-    return "";
   };
 
   const table = useMaterialReactTable({
@@ -443,20 +432,22 @@ function Table({ setClearAll }) {
             drag--;
           }
 
-          // The row that was dragged to cannot be between a copy and its original (Splitting them
-          // to address the out of index issue)
+          // The row that was dragged to cannot be between a copy and its original
           if (data[hoveredRow.index].hasCopy && hover > drag) {
             if (numbRowMove === 2) {
               hover += 1;
             } else if (numbRowMove === 1) {
-              hover += (drag < hover ? 1 : 2);
+              hover--;
             }
           } else if (data[hoveredRow.index].copyOf) {
             if (hover < data.length - 1) {
-              hover += (numbRowMove === 2 ? 2 : 1);
+              if (numbRowMove === 2) {
+                hover += 2;
+              } else if (hover < drag) {
+                hover++;
+              }
             }
           } 
-
 
           if (hover === drag) return;
           
@@ -512,12 +503,36 @@ function Table({ setClearAll }) {
           color='primary'
           variant='contained'
           onClick={() => {
-            const message = verifyGenerateReport();
-            if (message) {
-              alert(message);
+
+            let haveError = false;
+            let newError = { ...error };
+
+            if (data.length === 0) {
+              newError = { ...newError, numbEntry: 'add at least one photo' };
+              haveError = true;
             } else {
-              generateReport(data);
+              newError = { ...newError, numbEntry: '' };
             }
+            
+            if (!localStorage.getItem("incidentNumb")) {
+              setError({ ...error, 'incidentNumb': 'Please key in the incident number'});
+            }
+            if (!localStorage.getItem('location')) {
+              setError({ ...error, 'location': "Please key in the location"})
+            }
+
+            for (const value of Object.values(newError)) {
+              if (value) {
+                haveError = true;
+                setError(newError);
+                setCreateStack(true);
+                return;
+              }
+            }
+
+            if (haveError) setCreateStack(true);
+            else generateReport(data);
+            
           }}
         >
           {'Generate Report'}

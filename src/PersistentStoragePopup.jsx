@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import { Alert, Collapse, IconButton } from "@mui/material";
 import CloseIcon from '@mui/icons-material/Close';
 
-
 const StoragePopup = () => {
 
   const [showPopup, setShowPopup] = useState(false);

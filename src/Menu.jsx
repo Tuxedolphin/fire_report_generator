@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
-import PropTypes from "prop-types";
-import { Typography, Box, TextField, InputAdornment, Switch, Stack } from "@mui/material";
+import { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
+import { Typography, Box, TextField, InputAdornment, Switch, Stack } from '@mui/material';
 import Grid from '@mui/material/Grid2';
 
 import '@fontsource/roboto/300.css';
@@ -8,24 +8,54 @@ import '@fontsource/roboto/400.css';
 import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
 
-const regex = new RegExp('20\\d{6}/\\d{4}');
+// Regex for validating the inputs
+const regex = {
+  incidentNumb: new RegExp('^20\\d{6}/\\d{4}$'),
+  bagNumb: new RegExp('^\\d{4}$'),
+  postalCode: new RegExp('^\\d{6}$'),
+}
+
+// Error message should the input be invalid
+const message = {
+  incidentNumb: 'Please use the format YYYYMMDD/XXXX',
+  bagNumb: 'Please ensure that it is a 4 digit number',
+  postalCode: 'Please ensure that it is a 6 digit number',
+}
+
+// Object defining which function maps to which entry
+const validateMap = {
+  incidentNumb: validateIncidentNumb,
+  bagNumb: validateBagNumb,
+  postalCode: validatePostalCode,
+}
+
 
 function saveInput(event) {
   localStorage.setItem(event.target.id, event.target.value);
 }
 
 function validateIncidentNumb(value) {
-  if (!regex.test(value)) return false;
+  if (!regex.incidentNumb.test(value)) return false;
   return !isNaN(Date.parse(`${value.slice(0, 4)}-${value.slice(4, 6)}-${value.slice(6, 8)}`));
-
 }
+
+function validateBagNumb(value) {
+  return regex.bagNumb.test(value);
+}
+
+function validatePostalCode(value) {
+  return regex.postalCode.test(value);
+}
+
 
 Menu.propTypes = {
   clearAll: PropTypes.bool,
   setClearAll: PropTypes.func,
+  error: PropTypes.object,
+  setError: PropTypes.func,
 };
 
-function Menu({ clearAll, setClearAll }) {
+function Menu({ clearAll, setClearAll, error, setError }) {
 
   const [incNumb, setIncNumber] = useState('');
   const [bagNumb, setBagNumber] = useState('');
@@ -55,12 +85,25 @@ function Menu({ clearAll, setClearAll }) {
       setLocation('');
       setPostalCode('');
       setC1acc(false);
-
+      
       setClearAll(false);
     }
   }, [clearAll, setClearAll]);
+  
+  function validateInput(event) {
+    const type = event.target.id;
 
-  const [incNumbError, setIncNumbError] = useState('');
+    if (event.target.value.length === 0) {
+      setError({ ...error, [type]: '' });
+      return;
+    }
+    if (validateMap[type](event.target.value)) {
+      saveInput(event);
+      setError({ ...error, [type]: '' });
+    } else {
+      setError({ ...error, [type]: message[type] });
+    }
+  }
 
   return (
     <Box sx={{ width: '100%', maxWidth: '80vw', flexGrow: 1, marginBottom: '25px',  textAlign: 'center'}}>
@@ -76,19 +119,10 @@ function Menu({ clearAll, setClearAll }) {
             value={incNumb}
             onChange={(event) => {setIncNumber(event.target.value)}}
             onBlur={(event) => {
-              if (event.target.value.length === 0) {
-                setIncNumbError('');
-                return;
-              }
-              if (validateIncidentNumb(event.target.value)) {
-                saveInput(event);
-                setIncNumbError('');
-              } else {
-                setIncNumbError('Please use the format YYYYMMDD/XXXX')
-              }
+              validateInput(event);
             }}
-            error={!!incNumbError}
-            helperText={incNumbError}
+            error={!!error.incidentNumb}
+            helperText={error.incidentNumb}
           />
         </Grid>
         <Grid size={4}>
@@ -99,7 +133,11 @@ function Menu({ clearAll, setClearAll }) {
           fullWidth
           value={bagNumb}
           onChange={(event) => {setBagNumber(event.target.value)}}
-          onBlur={(event) => {saveInput(event)}}
+          onBlur={(event) => {
+            validateInput(event);
+          }}
+          error={!!error.bagNumb}
+          helperText={error.bagNumb}
           />
         </Grid>
         <Grid size = {4}>
@@ -124,7 +162,9 @@ function Menu({ clearAll, setClearAll }) {
           fullWidth 
           required
           value={location}
-          onChange={(event) => {setLocation(event.target.value)}}
+          onChange={(event) => {
+            setLocation(event.target.value);
+          }}
           onBlur={(event) => {saveInput(event)}}
           />
         </Grid>
@@ -137,11 +177,15 @@ function Menu({ clearAll, setClearAll }) {
             value={postalCode}
             slotProps={{
               input: {
-                startAdornment: <InputAdornment position="start">Singapore</InputAdornment>,
+                startAdornment: <InputAdornment position='start'>Singapore</InputAdornment>,
               },
             }}
-            onChange={(event) => {setPostalCode(event.target.value)}}
-            onBlur={(event) => {saveInput(event)}}
+            onChange={(event) => {
+              setPostalCode(event.target.value);
+            }}
+            onBlur={(event) => {validateInput(event);}}
+            error={!!error.postalCode}
+            helperText={error.postalCode}
             />
         </Grid>
       </Grid>
