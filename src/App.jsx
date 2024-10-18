@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import './App.css';
 import Table from './Table.jsx';
 import StoragePopup from './PersistentStoragePopup.jsx';

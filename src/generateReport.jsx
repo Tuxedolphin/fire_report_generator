@@ -249,9 +249,8 @@ function generatePhotoLog(photos) {
   ]];
 
   photos.forEach((photo) => {
-    if (bag) {
-      photo.photoUIDNumb = `${bag}/${photo.photoNumb}`
-    }
+    
+    photo.photoUIDNumb = `${bag ? `${bag}/` : ''}${photo.photoNumb}`
 
     photo.isLandscape = (photo.image.width > photo.image.height) ? true : false;
 
@@ -319,7 +318,7 @@ function generatePhotoAnnex(photos) {
   const defaultY = {
     l1: 1.326772, // First photo of landscape mode
     l2: 5.9094488,
-    p: 2.3622,
+    p: 2.8622,
   }
 
   const defaultX = {
@@ -447,12 +446,12 @@ function generatePhotoAnnex(photos) {
       formatPage(slide);
 
       // For the y-position and height of photo number and photo UID number text boxes
-      const topTextY = 7.0590551;
+      const topTextY = 7.5590551;
       const topTextH = 0.2007874;
 
       // For the width of the textbox for photo number and photo UID number
-      const leftW = 1.858268;
-      const rightW = 1.625984;
+      const leftW = 1.712598;
+      const rightW = 1.77165;
       
       const imgDimension = {
         w: width.p,
@@ -468,9 +467,9 @@ function generatePhotoAnnex(photos) {
       }
 
       const descriptionFormat = {
-        y: 7.2598425,
+        y: 7.7598425,
         h: 0.9094488,
-        w: 3.66142,
+        w: width.p,
         valign: "top",
         fontSize: 12,
         margin: 0,
@@ -487,7 +486,7 @@ function generatePhotoAnnex(photos) {
           sizing: { type: "contain", ...imgDimension },
         });
 
-        slide.addText(`${photo.copyOf ? "COPY OF " : ""}PHOTO ${photo.numb}`, {
+        slide.addText(`PHOTO ${photo.numb}`, {
           ...topTextFormat,
           x: defaultX.pc,
           w: leftW,
@@ -495,7 +494,7 @@ function generatePhotoAnnex(photos) {
 
         slide.addText(photo.photoUIDNumb, {
           ...topTextFormat,
-          x: 3.93701,
+          x: 3.791339,
           w: rightW,
           align: "right"
         });
@@ -508,7 +507,7 @@ function generatePhotoAnnex(photos) {
       } else {
 
         let leftX = defaultX.p1;
-        let rightX = 2.027559;
+        let rightX = 1.877953;
 
         // For loop for 2 photos
         for (let j = 0; j < 2; j++) {
@@ -522,7 +521,7 @@ function generatePhotoAnnex(photos) {
             sizing: { type: "contain", ...imgDimension }
           });
   
-          slide.addText(`${photo.copyOf ? "COPY OF" : ""} PHOTO ${photo.numb}`, {
+          slide.addText(`${photo.copyOf ? "COPY OF " : ""}PHOTO ${photo.numb}`, {
             ...topTextFormat,
             x: leftX,
             w: leftW,
@@ -542,7 +541,7 @@ function generatePhotoAnnex(photos) {
 
           // Update variables to follow that of the second image
           leftX = defaultX.p2;
-          rightX = 5.7165354;
+          rightX = 5.5708661;
           photo = photos[i + 1];
 
           if (Math.abs(getAspectRatio(photo.image) - ratio) > 0.0001) {
@@ -567,8 +566,6 @@ function generatePhotoAnnex(photos) {
  * @param {Array<Photo>} photos Array of Photo objects 
  */
 async function generateReport(photos) {
-
-  console.log(photos);
 
   updateBasicConstants();
   formatPptx();
@@ -649,8 +646,6 @@ async function generateReport(photos) {
   
   if (!c1Acc) {
     generatePhotoLog(photos);
-
-    console.log(photos.at(-1));
 
     let annexE = pptx.addSlide();
     formatPage(annexE);
