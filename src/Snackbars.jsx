@@ -30,7 +30,7 @@ const Snackbars = ({ error, createStack, setCreateStack }) => {
       }
       
       if (error.numbEntry) {
-        message = message + ` ${(message !== 'Please ensure that') ? 'and' : ''}` + " there is at least one photo entry"
+        message = message + ` ${(message !== 'Please ensure that') ? 'and' : ''}` + " there is at least one photo entry";
       }
       
       if (message === 'Please ensure that') return;

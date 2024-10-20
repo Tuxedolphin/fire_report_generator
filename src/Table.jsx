@@ -14,7 +14,6 @@ import {
 import {
   Box,
   Button,
-  CircularProgress,
   Typography,
   Dialog,
   DialogTitle,
@@ -25,7 +24,7 @@ import {
   styled,
 } from '@mui/material';
 import { Delete, Add, CloudUpload } from '@mui/icons-material';
-import PropTypes, { bool } from "prop-types";
+import PropTypes from "prop-types";
 import generateReport from './generateReport.jsx';
 
 // Hidden Input For Adding Functionality To Some Buttons
@@ -44,6 +43,16 @@ const VisuallyHiddenInput = styled('input')({
 // class to hold the required information of each photo
 class Photo {
 
+  /**
+   * Constructor function
+   * @param {File | Blob} image The file or blob object containing the information about the image
+   * @param {number} numb The number of the photo, i.e. the number after PHOTO _ and COPY OF PHOTO _. 
+   * @param {string} photoNumb The UID of the photo, excluding the evidence bag number.
+   * @param {string} description The description of the image.
+   * @param {number} id The unique ID for each image, given as the return value of the add photo database
+   * @param {number | null} copyOf If the photo is a copy of another image, the id of the image that it is a copy of, else null.
+   * @param {number | null} hasCopy If the photo has a copy, the id of the image that is a copy of this photo, else null.
+   */
   constructor(image, numb, photoNumb, description, id = -1, copyOf = null, hasCopy = null) {
     this.id = id;
     this.image = new Image();
@@ -55,40 +64,56 @@ class Photo {
     this.blob = new Blob([image]);
 
     this.numb = numb;
-    this.displayedNumb = (copyOf ? 'Copy of ' : '') + numb.toString();
+    this.displayedNumb = (copyOf ? 'Copy of ' : '') + numb.toString(); // The displayed string in the table
   }
 
+  /**
+   * Updates the photo number of the object.
+   * @param {number} newNumb The new number to update the number to
+   */
   updateNumb(newNumb) {
     this.numb = newNumb;
     this.displayedNumb = (this.copyOf ? 'Copy of ' : '') + newNumb.toString();
   }
 
+  /**
+   * Creates and returns an identical copy of the image
+   * @returns A new photo object
+   */
   createPureCopy() {
     return new Photo(this.image, this.numb, this.photoNumb, this.description, this.id, this.copyOf, this.hasCopy);
   }
 
+  /**
+   * Creates a copy of the image object for the 'COPY OF ...' photo.
+   * @returns A new photo object with -1 for id and the original photo's id for copyOf
+   */
   createCopy() {
     return new Photo(this.blob, this.numb, this.photoNumb, '', -1, this.id);
   }
 
+  /**
+   * Checks if the current image object is a landscape or portrait image
+   * @returns "landscape" if the object is a landscape image, or "portrait" otherwise.
+   */
   getOrientation() {
     return (this.image.width > this.image.height) ? "landscape" : "portrait"
   }
 }
 
 DeleteConfirmDialog.propTypes = {
-  open: PropTypes.bool,
-  setOpen: PropTypes.func, 
-  data: PropTypes.array,
-  setData: PropTypes.func,
-  deleteId: PropTypes.number,
-  handleDelete: PropTypes.func,
-  handleDeleteAll: PropTypes.func,
+  open: PropTypes.bool, // To set if the dialog should be opened
+  setOpen: PropTypes.func, // Function to set open
+  data: PropTypes.array, // Array of data that holds the information for the table
+  setData: PropTypes.func, // Function to set data
+  deleteId: PropTypes.number, // The deletion id (see below for more information)
+  handleDelete: PropTypes.func, // The function on how to handle singular photo deletion
+  handleDeleteAll: PropTypes.func, // The function to handle how to delete all the photos
 }
 
 /**
  * Dialog to prompt user if they are sure they want to delete (all) the photo.
- * @param {Object} param0 
+ * @param {Object} Props the react props
  * Note that for deleteId, < 0 means to delete all, > 0 means the index of the photo to delete,
  * and 0 is the default value
  * @returns React component
@@ -142,6 +167,7 @@ function DeleteConfirmDialog({ open, setOpen, data, setData, deleteId, handleDel
               } else console.log("ERROR: Invalid deleteId")
             }}
             autoFocus
+            color='error'
           >
             Delete
           </Button>
@@ -152,13 +178,17 @@ function DeleteConfirmDialog({ open, setOpen, data, setData, deleteId, handleDel
 }
 
 AddPhotoForm.propTypes = {
-  openAddForm: PropTypes.bool,
-  setOpenAddForm: PropTypes.func,
-  data: PropTypes.array,
-  setData: PropTypes.func,
+  openAddForm: PropTypes.bool, // If the form should be opened
+  setOpenAddForm: PropTypes.func, // Function to set the status of openAddForm
+  data: PropTypes.array, // The array of data used in the table
+  setData: PropTypes.func, // Function to set data
 }
 
-// Modal for data entry
+/**
+ * Modal for data entry
+ * @param {Props} Props
+ * @returns 
+ */
 function AddPhotoForm({ openAddForm, setOpenAddForm, data, setData }) {
 
   const [photo, setPhoto] = useState(new File([""], "empty"));
@@ -166,6 +196,11 @@ function AddPhotoForm({ openAddForm, setOpenAddForm, data, setData }) {
   const [validFile, setValidFile] = useState('');
   const [disableButton, setDisableButton] = useState(true);
 
+  /**
+   * Check for file validity, making sure that there is a file and it is of the correct type.
+   * @param {File} file The file object to be validated for
+   * @returns {bool} The boolean of if the file is valid
+   */
   const checkFileValidity = (file) => {
 
     if (!file) {
@@ -190,6 +225,11 @@ function AddPhotoForm({ openAddForm, setOpenAddForm, data, setData }) {
     }
   }
 
+  /**
+   * A simple function to state how the file is handled
+   * @param {File | null} file The file object to be handled, null if there's been an error
+   * @returns void
+   */
   const handleFile = (file) => {
     if (!checkFileValidity(file)) {
       return;
@@ -197,6 +237,9 @@ function AddPhotoForm({ openAddForm, setOpenAddForm, data, setData }) {
     setPhoto(file);
   }
 
+  /**
+   * Handles what happens when the form is closed, setting the required variables to be its default value.
+   */
   const handleClose = () => {
     setPhoto(new File([''], 'empty'));
     setDisableButton(true);
@@ -286,12 +329,17 @@ function AddPhotoForm({ openAddForm, setOpenAddForm, data, setData }) {
 }
 
 Table.propTypes = {
-  error: PropTypes.object,
-  setError: PropTypes.func,
-  setClearAll: PropTypes.func,
-  setCreateStack: PropTypes.func,
+  error: PropTypes.object, // The object where the keys are the potential areas there there can be an error and the value the error message
+  setError: PropTypes.func, // Function to set the error object
+  setClearAll: PropTypes.func, // Function to set if user wants to clear all of the images
+  setCreateStack: PropTypes.func, // Function to create a error message stack
 }
 
+/**
+ * The react component for the main table
+ * @param {Props} Props 
+ * @returns React component
+ */
 function Table({ error, setError, setClearAll, setCreateStack }) {
 
   const [data, setData] = useState([]);
@@ -303,6 +351,7 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
   const [deleteId, setDeleteId] = useState(0); // Holds if need to delete all and the index of what to delete
 
   useEffect(() => {
+    // Retrieves all of the data from the database and then sorts it based on its number
     retrieveAll().then((items) => {
       let newData = items.map((entry) => {
         return new Photo(entry.image, entry.numb, entry.photoNumb, entry.description, entry.id, entry.copyOf, entry.hasCopy);
@@ -317,6 +366,7 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
       ));
     });
 
+    // On page load, retrieve the last page size that the user has used
     setPagination({
       pageSize: localStorage.getItem("pageSize") ? localStorage.getItem("pageSize") : 25,
       pageIndex: 0,
@@ -324,6 +374,7 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
 
   }, []);
 
+  // Save the new pagination page size whenever the user has changed it
   useEffect(() => {
 
     if (Object.keys(pagination).length !== 0) {
@@ -380,7 +431,7 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
           // TODO: On blur, if there's error, return to original and give error message
           onBlur: (event) => {
             if (!validPhotoNumb)
-              updateCell(cell.column.id, row.original, +row.id, event.target.value);
+              updateCell(cell.column.id, row.original, +row.id, event.target.value); // Row.id is a string, need to convert to number
           }
         }),
       },
@@ -420,8 +471,12 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
     });
   }
 
-  // Opens the delete modal, then handles the deletion of a photo
-  const openDeleteConfirmModal = (deleteId, row=[]) => {
+  /**
+   * Opens the delete modal, then handles the deletion of a photo
+   * @param {number} deleteId The delete id, =>0 for deleting the photo with that index, and < 0 for deleting all.
+   * @param {Object} row The photo object to be deleted, only required if there is no delete id.
+   */
+  const openDeleteConfirmModal = (deleteId, row={}) => {
     
     if (!deleteId) {
       deleteId = data.indexOf(row.original);
@@ -432,6 +487,12 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
   
   };
 
+  /**
+   * Handles the deletion of one photo object, including handling the automatic update of the numbers
+   * @param {Photo} photo 
+   * @param {Array<Photo>} data 
+   * @returns The updated array of photo objects
+   */
   const handleDelete = (photo, data) => {
     
     deletePhoto(photo.id);
@@ -444,7 +505,7 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
       updatePhoto(newData[index]);
       return newData;
       
-    } else {
+    } else { // We only need to update all the numbers should the photo that was deleted not a copy of ...
       
       let wasCopy = false;
 
@@ -466,6 +527,9 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
     }
   }
 
+  /**
+   * Handles the deletion of all the photo objects
+   */
   const handleDeleteAll = () => {
     clearAll();
     setData([]);
@@ -501,6 +565,7 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
     state: { pagination },
     onPaginationChange: setPagination,
     muiRowDragHandleProps: ({ table }) => ({
+      // Handles what happens when a row is dragged to anther row, such as updating the numbers and data array
       onDragEnd: () => {
         const { draggingRow, hoveredRow } = table.getState();
 
@@ -525,7 +590,11 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
             drag--;
           }
 
-          // The row that was dragged to cannot be between a copy and its original
+          /**
+           * The row that was dragged to cannot be between a copy and its original.
+           * Updated such that if we drag a row to the original photo, the dragged row(s) will be placed before the original,
+           * and if we drag it to the copy of photo, the dragged row(s) will be placed after the copy of photo.
+           */
           if (data[hoveredRow.index].hasCopy && hover > drag) {
             if (numbRowMove === 2) {
               hover += 1;
@@ -554,6 +623,7 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
           // Updating the picture order numbers
           let wasCopy = false;
 
+          // Updates all of the numbers
           for (let i = Math.min(a, b), max = Math.max(a, b), index = Math.min(drag, hover), maxIndex = data.length;
             i <= max, index < maxIndex;
             i++, index++
@@ -596,6 +666,7 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
           color='primary'
           variant='contained'
           onClick={() => {
+            // Validates and sets the corresponding errors before generating the report
 
             let haveError = false;
             let newError = { ...error };
