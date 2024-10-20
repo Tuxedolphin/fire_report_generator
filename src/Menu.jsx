@@ -29,29 +29,46 @@ const validateMap = {
   postalCode: validatePostalCode,
 }
 
-
+/**
+ * Saves the input from the menu into local storage
+ * @param {event} event 
+ */
 function saveInput(event) {
   localStorage.setItem(event.target.id, event.target.value);
 }
 
+/**
+ * Validates the incident number according to YYYYMMDD/XXXX
+ * @param {string} value The inputted value from the incident number field in the menu
+ * @returns bool of if the incident number is valid
+ */
 function validateIncidentNumb(value) {
   if (!regex.incidentNumb.test(value)) return false;
   return !isNaN(Date.parse(`${value.slice(0, 4)}-${value.slice(4, 6)}-${value.slice(6, 8)}`));
 }
 
+/**
+ * Validates the evidence bag number - requires 4 digits
+ * @param {string} value The value of the evidence bag number inputted into the menu
+ * @returns bool of if the evidence bag number is valid
+ */
 function validateBagNumb(value) {
   return regex.bagNumb.test(value);
 }
 
+/**
+ * Validates the postal code - requires 6 digits
+ * @param {string} value The value of the postal code inputted into the menu
+ * @returns bool of if the postal code is valid
+ */
 function validatePostalCode(value) {
   return regex.postalCode.test(value);
 }
 
-
 Menu.propTypes = {
-  clearAll: PropTypes.bool,
+  clearAll: PropTypes.bool, // Bool of if the we need to clear all the fields
   setClearAll: PropTypes.func,
-  error: PropTypes.object,
+  error: PropTypes.object, // Object where the key is the field where there may be an issue, and the value is the error message
   setError: PropTypes.func,
 };
 

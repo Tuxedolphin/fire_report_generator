@@ -8,25 +8,19 @@ const StoragePopup = () => {
   const [showPopup, setShowPopup] = useState(false);
 
   useEffect(() => {
-    let ignore = false;
-    
-    if (!ignore) {
-      if (navigator.storage && navigator.storage.persist) {
-        navigator.storage.persist().then((persistent) => {
-          if (persistent) {
-            console.log("Persistent Storage Granted");
-          } else {
-            setShowPopup(true);
-            setTimeout(() => {
-              setShowPopup(false);
-            }, 20000);
-            
-          }
-        });
-      }
-    }
-
-    return () => { ignore = true };
+    // Request for persistent storage
+    if (navigator.storage && navigator.storage.persist) {
+      navigator.storage.persist().then((persistent) => {
+        if (persistent) {
+          console.log("Persistent Storage Granted");
+        } else {
+          setShowPopup(true);
+          setTimeout(() => {
+            setShowPopup(false);
+          }, 20000);
+        }
+      });
+    } 
   },[]);
 
   return (

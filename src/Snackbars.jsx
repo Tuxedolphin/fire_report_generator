@@ -86,5 +86,4 @@ Snackbars.propTypes = {
   setCreateStack: PropTypes.func,
 }
 
-
 export default Snackbars
