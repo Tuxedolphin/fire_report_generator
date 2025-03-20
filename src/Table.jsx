@@ -1,16 +1,16 @@
-import { useMemo, useState, useEffect, useCallback } from 'react';
+import { useMemo, useState, useEffect, useCallback } from "react";
 import {
   addPhoto,
   updatePhoto,
   deletePhoto,
   clearAll,
   retrieveAll,
-} from './db.jsx'
+} from "./db.jsx";
 import {
   MaterialReactTable,
   useMaterialReactTable,
   MRT_ActionMenuItem,
-} from 'material-react-table';
+} from "material-react-table";
 import {
   Box,
   Button,
@@ -22,38 +22,45 @@ import {
   DialogContentText,
   TextField,
   styled,
-} from '@mui/material';
-import { Delete, Add, CloudUpload } from '@mui/icons-material';
+} from "@mui/material";
+import { Delete, Add, CloudUpload } from "@mui/icons-material";
 import PropTypes from "prop-types";
-import generateReport from './generateReport.jsx';
+import generateReport from "./generateReport.jsx";
 
 // Hidden Input For Adding Functionality To Some Buttons
-const VisuallyHiddenInput = styled('input')({
-  clip: 'rect(0 0 0 0)',
-  clipPath: 'inset(50%)',
+const VisuallyHiddenInput = styled("input")({
+  clip: "rect(0 0 0 0)",
+  clipPath: "inset(50%)",
   height: 1,
-  overflow: 'hidden',
-  position: 'absolute',
+  overflow: "hidden",
+  position: "absolute",
   bottom: 0,
   left: 0,
-  whiteSpace: 'nowrap',
+  whiteSpace: "nowrap",
   width: 1,
 });
 
 // class to hold the required information of each photo
 class Photo {
-
   /**
    * Constructor function
    * @param {File | Blob} image The file or blob object containing the information about the image
-   * @param {number} numb The number of the photo, i.e. the number after PHOTO _ and COPY OF PHOTO _. 
+   * @param {number} numb The number of the photo, i.e. the number after PHOTO _ and COPY OF PHOTO _.
    * @param {string} photoNumb The UID of the photo, excluding the evidence bag number.
    * @param {string} description The description of the image.
    * @param {number} id The unique ID for each image, given as the return value of the add photo database
    * @param {number | null} copyOf If the photo is a copy of another image, the id of the image that it is a copy of, else null.
    * @param {number | null} hasCopy If the photo has a copy, the id of the image that is a copy of this photo, else null.
    */
-  constructor(image, numb, photoNumb, description, id = -1, copyOf = null, hasCopy = null) {
+  constructor(
+    image,
+    numb,
+    photoNumb,
+    description,
+    id = -1,
+    copyOf = null,
+    hasCopy = null
+  ) {
     this.id = id;
     this.image = new Image();
     this.image.src = URL.createObjectURL(image);
@@ -64,7 +71,7 @@ class Photo {
     this.blob = new Blob([image]);
 
     this.numb = numb;
-    this.displayedNumb = (copyOf ? 'Copy of ' : '') + numb.toString(); // The displayed string in the table
+    this.displayedNumb = (copyOf ? "Copy of " : "") + numb.toString(); // The displayed string in the table
   }
 
   /**
@@ -73,7 +80,7 @@ class Photo {
    */
   updateNumb(newNumb) {
     this.numb = newNumb;
-    this.displayedNumb = (this.copyOf ? 'Copy of ' : '') + newNumb.toString();
+    this.displayedNumb = (this.copyOf ? "Copy of " : "") + newNumb.toString();
   }
 
   /**
@@ -81,7 +88,15 @@ class Photo {
    * @returns A new photo object
    */
   createPureCopy() {
-    return new Photo(this.image, this.numb, this.photoNumb, this.description, this.id, this.copyOf, this.hasCopy);
+    return new Photo(
+      this.image,
+      this.numb,
+      this.photoNumb,
+      this.description,
+      this.id,
+      this.copyOf,
+      this.hasCopy
+    );
   }
 
   /**
@@ -89,7 +104,7 @@ class Photo {
    * @returns A new photo object with -1 for id and the original photo's id for copyOf
    */
   createCopy() {
-    return new Photo(this.blob, this.numb, this.photoNumb, '', -1, this.id);
+    return new Photo(this.blob, this.numb, this.photoNumb, "", -1, this.id);
   }
 
   /**
@@ -97,7 +112,7 @@ class Photo {
    * @returns "landscape" if the object is a landscape image, or "portrait" otherwise.
    */
   getOrientation() {
-    return (this.image.width > this.image.height) ? "landscape" : "portrait"
+    return this.image.width > this.image.height ? "landscape" : "portrait";
   }
 }
 
@@ -109,7 +124,7 @@ DeleteConfirmDialog.propTypes = {
   deleteId: PropTypes.number, // The deletion id (see below for more information)
   handleDelete: PropTypes.func, // The function on how to handle singular photo deletion
   handleDeleteAll: PropTypes.func, // The function to handle how to delete all the photos
-}
+};
 
 /**
  * Dialog to prompt user if they are sure they want to delete (all) the photo.
@@ -118,24 +133,33 @@ DeleteConfirmDialog.propTypes = {
  * and 0 is the default value
  * @returns React component
  */
-function DeleteConfirmDialog({ open, setOpen, data, setData, deleteId, handleDelete, handleDeleteAll }) {
-
+function DeleteConfirmDialog({
+  open,
+  setOpen,
+  data,
+  setData,
+  deleteId,
+  handleDelete,
+  handleDeleteAll,
+}) {
   const handleClose = () => {
     setOpen(false);
   };
 
   const deletePhoto = () => {
-
     let newData = [...data];
 
     // If it has a copy, the copy needs to be deleted as well
     if (data[deleteId].hasCopy) {
-      newData = handleDelete(data.find((element) => element.id == data[deleteId].hasCopy), newData);
+      newData = handleDelete(
+        data.find((element) => element.id == data[deleteId].hasCopy),
+        newData
+      );
     }
     newData = handleDelete(data[deleteId], newData);
 
     setData(newData);
-  }
+  };
 
   return (
     <>
@@ -150,8 +174,9 @@ function DeleteConfirmDialog({ open, setOpen, data, setData, deleteId, handleDel
         </DialogTitle>
         <DialogContent>
           <DialogContentText id="alert-dialog-description">
-            Do you really want to delete { deleteId < 0 ? "all the photos" : "the photo" }? 
-            This process cannot be undone.
+            Do you really want to delete{" "}
+            {deleteId < 0 ? "all the photos" : "the photo"}? This process cannot
+            be undone.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
@@ -164,10 +189,10 @@ function DeleteConfirmDialog({ open, setOpen, data, setData, deleteId, handleDel
               } else if (deleteId > 0) {
                 deletePhoto();
                 handleClose();
-              } else console.log("ERROR: Invalid deleteId")
+              } else console.log("ERROR: Invalid deleteId");
             }}
             autoFocus
-            color='error'
+            color="error"
           >
             Delete
           </Button>
@@ -182,18 +207,17 @@ AddPhotoForm.propTypes = {
   setOpenAddForm: PropTypes.func, // Function to set the status of openAddForm
   data: PropTypes.array, // The array of data used in the table
   setData: PropTypes.func, // Function to set data
-}
+};
 
 /**
  * Modal for data entry
  * @param {Props} Props
- * @returns 
+ * @returns
  */
 function AddPhotoForm({ openAddForm, setOpenAddForm, data, setData }) {
-
   const [photo, setPhoto] = useState(new File([""], "empty"));
-  const [status, setStatus] = useState('');
-  const [validFile, setValidFile] = useState('');
+  const [status, setStatus] = useState("");
+  const [validFile, setValidFile] = useState("");
   const [disableButton, setDisableButton] = useState(true);
 
   /**
@@ -202,28 +226,29 @@ function AddPhotoForm({ openAddForm, setOpenAddForm, data, setData }) {
    * @returns {bool} The boolean of if the file is valid
    */
   const checkFileValidity = (file) => {
-
     if (!file) {
-      setValidFile('error');
-      setStatus('File could not be uploaded.')
+      setValidFile("error");
+      setStatus("File could not be uploaded.");
       setDisableButton(true);
     }
 
-    let parts = file['name'].split('.');
-    let result = ['jpeg', 'jpg', 'png', 'raw', 'heic'].indexOf(parts[parts.length - 1]);
+    let parts = file["name"].split(".");
+    let result = ["jpeg", "jpg", "png", "raw", "heic"].indexOf(
+      parts[parts.length - 1]
+    );
 
     if (result < 0) {
-      setValidFile('error');
-      setStatus(`File "${file['name']}" has invalid file format.`);
+      setValidFile("error");
+      setStatus(`File "${file["name"]}" has invalid file format.`);
       setDisableButton(true);
       return false;
     } else {
-      setValidFile('success');
-      setStatus(`File "${file['name']}" uploaded`);
+      setValidFile("success");
+      setStatus(`File "${file["name"]}" uploaded`);
       setDisableButton(false);
       return true;
     }
-  }
+  };
 
   /**
    * A simple function to state how the file is handled
@@ -235,33 +260,38 @@ function AddPhotoForm({ openAddForm, setOpenAddForm, data, setData }) {
       return;
     }
     setPhoto(file);
-  }
+  };
 
   /**
    * Handles what happens when the form is closed, setting the required variables to be its default value.
    */
   const handleClose = () => {
-    setPhoto(new File([''], 'empty'));
+    setPhoto(new File([""], "empty"));
     setDisableButton(true);
-    setStatus('');
-    setValidFile('');
+    setStatus("");
+    setValidFile("");
     setOpenAddForm(false);
-  }
+  };
 
   return (
     <Dialog
       open={openAddForm}
       onClose={handleClose}
       PaperProps={{
-        component: 'form',
+        component: "form",
         onSubmit: (event) => {
           event.preventDefault();
           const formData = new FormData(event.currentTarget);
           const newData = Object.fromEntries(formData.entries());
 
-          const currentNumb = (data.length === 0) ? 0 : data.at(-1).numb;
+          const currentNumb = data.length === 0 ? 0 : data.at(-1).numb;
 
-          let newPhoto = new Photo(photo, +currentNumb + 1, newData.photoNumb, newData.description);
+          let newPhoto = new Photo(
+            photo,
+            +currentNumb + 1,
+            newData.photoNumb,
+            newData.description
+          );
           addPhoto(newPhoto).then((newId) => {
             newPhoto.id = newId;
             setData([...data, newPhoto]);
@@ -276,24 +306,24 @@ function AddPhotoForm({ openAddForm, setOpenAddForm, data, setData }) {
       <DialogContent>
         <TextField
           autoFocus
-          id='photoNumb'
-          name='photoNumb'
+          id="photoNumb"
+          name="photoNumb"
           required
-          margin='dense'
-          label='Photo Number'
-          variant='standard'
-          type='text'
-          autoComplete='off'
+          margin="dense"
+          label="Photo Number"
+          variant="standard"
+          type="text"
+          autoComplete="off"
           fullWidth
         />
-        <TextField 
-          id='description'
-          name='description'
-          margin='dense'
-          label='Description'
-          variant='standard'
-          type='text'
-          autoComplete='off'
+        <TextField
+          id="description"
+          name="description"
+          margin="dense"
+          label="Description"
+          variant="standard"
+          type="text"
+          autoComplete="off"
           fullWidth
           multiline
         />
@@ -303,14 +333,14 @@ function AddPhotoForm({ openAddForm, setOpenAddForm, data, setData }) {
           variant="contained"
           tabIndex={-1}
           startIcon={<CloudUpload />}
-          sx={{ marginTop: '8px', marginBottom: '4px' }}
+          sx={{ marginTop: "8px", marginBottom: "4px" }}
         >
           Upload file
           <VisuallyHiddenInput
             type="file"
             onChange={(event) => {
               try {
-              handleFile(event.target.files[0])
+                handleFile(event.target.files[0]);
               } catch (error) {
                 console.log(error);
                 handleFile(null);
@@ -322,10 +352,12 @@ function AddPhotoForm({ openAddForm, setOpenAddForm, data, setData }) {
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose}>Cancel</Button>
-        <Button type="submit" disabled={disableButton}>Submit</Button>
+        <Button type="submit" disabled={disableButton}>
+          Submit
+        </Button>
       </DialogActions>
     </Dialog>
-  )
+  );
 }
 
 Table.propTypes = {
@@ -333,18 +365,17 @@ Table.propTypes = {
   setError: PropTypes.func, // Function to set the error object
   setClearAll: PropTypes.func, // Function to set if user wants to clear all of the images
   setCreateStack: PropTypes.func, // Function to create a error message stack
-}
+};
 
 /**
  * The react component for the main table
- * @param {Props} Props 
+ * @param {Props} Props
  * @returns React component
  */
 function Table({ error, setError, setClearAll, setCreateStack }) {
-
   const [data, setData] = useState([]);
   const [pagination, setPagination] = useState({});
-  const [validPhotoNumb, setValidPhotoNumb] = useState('');
+  const [validPhotoNumb, setValidPhotoNumb] = useState("");
 
   const [openAddForm, setOpenAddForm] = useState(false); // Holds if add photo form should be opened
   const [openDelete, setOpenDelete] = useState(false); // Holds if delete photo modal should be opened
@@ -354,107 +385,126 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
     // Retrieves all of the data from the database and then sorts it based on its number
     retrieveAll().then((items) => {
       let newData = items.map((entry) => {
-        return new Photo(entry.image, entry.numb, entry.photoNumb, entry.description, entry.id, entry.copyOf, entry.hasCopy);
+        return new Photo(
+          entry.image,
+          entry.numb,
+          entry.photoNumb,
+          entry.description,
+          entry.id,
+          entry.copyOf,
+          entry.hasCopy
+        );
       });
       // Sort data based on photo number, and copy after original
-      setData(newData.sort((a, b) => {
-        if (a.numb == b.numb) {
-          return a.copyOf ? 1 : -1;
-        } 
-        return (a.numb - b.numb);
-        }
-      ));
+      setData(
+        newData.sort((a, b) => {
+          if (a.numb == b.numb) {
+            return a.copyOf ? 1 : -1;
+          }
+          return a.numb - b.numb;
+        })
+      );
     });
 
     // On page load, retrieve the last page size that the user has used
     setPagination({
-      pageSize: localStorage.getItem("pageSize") ? localStorage.getItem("pageSize") : 25,
+      pageSize: localStorage.getItem("pageSize")
+        ? localStorage.getItem("pageSize")
+        : 25,
       pageIndex: 0,
-    })
-
+    });
   }, []);
 
   // Save the new pagination page size whenever the user has changed it
   useEffect(() => {
-
     if (Object.keys(pagination).length !== 0) {
       localStorage.setItem("pageSize", pagination.pageSize);
     }
-
   }, [pagination]);
 
   // Saves the data in the data array into IndexedDB
-  const updateCell = useCallback(async (columnID, photo, index, newValue) => {
+  const updateCell = useCallback(
+    async (columnID, photo, index, newValue) => {
+      if (photo[columnID] == newValue) return;
 
-    if (photo[columnID] == newValue) return; 
-            
-    let newData = [...data];
+      let newData = [...data];
 
-    newData[index][columnID] = newValue;
-    updatePhoto(newData[index]);
-    
-    if (columnID == "photoNumb" && (photo.hasCopy || photo.copyOf)) {
-      index = photo.hasCopy ? index + 1 : index - 1;
       newData[index][columnID] = newValue;
       updatePhoto(newData[index]);
-    }
 
-    setData(newData);
-  }, [data]);
+      if (columnID == "photoNumb" && (photo.hasCopy || photo.copyOf)) {
+        index = photo.hasCopy ? index + 1 : index - 1;
+        newData[index][columnID] = newValue;
+        updatePhoto(newData[index]);
+      }
+
+      setData(newData);
+    },
+    [data]
+  );
 
   const columns = useMemo(
     () => [
       {
-        accessorKey: 'displayedNumb',
-        header: '#',
+        accessorKey: "displayedNumb",
+        header: "#",
         enableEditing: false,
         enableResizing: false,
         grow: false,
         size: 50,
       },
       {
-        accessorKey: 'photoNumb',
-        header: 'Photo Number',
+        accessorKey: "photoNumb",
+        header: "Photo Number",
         required: true,
         muiEditTextFieldProps: ({ cell, row }) => ({
-          type: 'text',
+          type: "text",
           required: true,
           error: !!validPhotoNumb,
           helperText: validPhotoNumb,
           onChange: (event) => {
             if (!event.target.value) {
-              setValidPhotoNumb('Required');
+              setValidPhotoNumb("Required");
             } else if (validPhotoNumb) {
-              setValidPhotoNumb('');
+              setValidPhotoNumb("");
             }
           },
           // TODO: On blur, if there's error, return to original and give error message
           onBlur: (event) => {
             if (!validPhotoNumb)
-              updateCell(cell.column.id, row.original, +row.id, event.target.value); // Row.id is a string, need to convert to number
-          }
+              updateCell(
+                cell.column.id,
+                row.original,
+                +row.id,
+                event.target.value
+              ); // Row.id is a string, need to convert to number
+          },
         }),
       },
       {
-        accessorKey: 'description',
-        header: 'Description',
+        accessorKey: "description",
+        header: "Description",
         required: true,
         enableResizing: false,
         grow: 10,
         muiEditTextFieldProps: ({ cell, row }) => ({
-          type: 'text',
+          type: "text",
           onBlur: (event) => {
-            updateCell(cell.column.id, row.original, +row.id, event.target.value);
-          }
+            updateCell(
+              cell.column.id,
+              row.original,
+              +row.id,
+              event.target.value
+            );
+          },
         }),
       },
     ],
-    [updateCell, validPhotoNumb],
+    [updateCell, validPhotoNumb]
   );
 
   // Handles what happens when the create copy button is clicked
   const createCopy = (image) => {
-    
     let newCopy = image.createCopy();
     addPhoto(newCopy).then((newId) => {
       newCopy.id = newId;
@@ -469,47 +519,46 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
 
       setData(newData);
     });
-  }
+  };
 
   /**
    * Opens the delete modal, then handles the deletion of a photo
    * @param {number} deleteId The delete id, =>0 for deleting the photo with that index, and < 0 for deleting all.
    * @param {Object} row The photo object to be deleted, only required if there is no delete id.
    */
-  const openDeleteConfirmModal = (deleteId, row={}) => {
-    
+  const openDeleteConfirmModal = (deleteId, row = {}) => {
     if (!deleteId) {
       deleteId = data.indexOf(row.original);
     }
-    
+
     setDeleteId(deleteId);
     setOpenDelete(true);
-  
   };
 
   /**
    * Handles the deletion of one photo object, including handling the automatic update of the numbers
-   * @param {Photo} photo 
-   * @param {Array<Photo>} data 
+   * @param {Photo} photo
+   * @param {Array<Photo>} data
    * @returns The updated array of photo objects
    */
   const handleDelete = (photo, data) => {
-    
     deletePhoto(photo.id);
-    let newData = data.filter((element) => {return (photo.id != element.id)});
-    
-    if (photo.copyOf) {
+    let newData = data.filter((element) => {
+      return photo.id != element.id;
+    });
 
+    if (photo.copyOf) {
       const index = newData.findIndex((element) => element.id == photo.copyOf);
       newData[index].hasCopy = null;
       updatePhoto(newData[index]);
       return newData;
-      
-    } else { // We only need to update all the numbers should the photo that was deleted not a copy of ...
-      
+    } else {
+      // We only need to update all the numbers should the photo that was deleted not a copy of ...
+
       let wasCopy = false;
 
-      for (let number = photo.numb, index = data.indexOf(photo);
+      for (
+        let number = photo.numb, index = data.indexOf(photo);
         index < newData.length;
         number++, index++
       ) {
@@ -525,7 +574,7 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
       }
       return newData;
     }
-  }
+  };
 
   /**
    * Handles the deletion of all the photo objects
@@ -534,11 +583,11 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
     clearAll();
     setData([]);
     setError({
-      incidentNumb: '',
-      bagNumb: '',
-      location: '',
-      postalCode: '',
-      numbEntry: '',
+      incidentNumb: "",
+      bagNumb: "",
+      location: "",
+      postalCode: "",
+      numbEntry: "",
     });
     setClearAll(true);
   };
@@ -547,20 +596,20 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
     columns,
     data,
     enableEditing: true,
-    editDisplayMode: 'cell',
+    editDisplayMode: "cell",
     enableRowActions: true,
     enableRowOrdering: true,
     enableSorting: false,
     enableColumnResizing: true,
     autoResetPageIndex: false,
     initialState: {
-      columnPinning: { right: ['mrt-row-actions'] },
+      columnPinning: { right: ["mrt-row-actions"] },
     },
-    layoutMode: 'grid-no-grow',
+    layoutMode: "grid-no-grow",
     displayColumnDefOptions: {
-      'mrt-row-actions': {
+      "mrt-row-actions": {
         grow: false,
-      }
+      },
     },
     state: { pagination },
     onPaginationChange: setPagination,
@@ -570,14 +619,14 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
         const { draggingRow, hoveredRow } = table.getState();
 
         if (hoveredRow && draggingRow) {
-          
           if (hoveredRow === draggingRow) return;
 
-          if (data[hoveredRow.index].numb === data[draggingRow.index].numb) return;
+          if (data[hoveredRow.index].numb === data[draggingRow.index].numb)
+            return;
 
           let drag = draggingRow.index;
           let hover = hoveredRow.index;
-          
+
           let newData = [...data];
           let numbRowMove = 1;
           // If it has a copy, need to move the very next object as well.
@@ -609,22 +658,28 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
                 hover++;
               }
             }
-          } 
+          }
 
           if (hover === drag) return;
-          
-          const firstIndex = (drag > hover) ? hover : (hover - numbRowMove + 1);
-          
+
+          const firstIndex = drag > hover ? hover : hover - numbRowMove + 1;
+
           newData.splice(firstIndex, 0, ...newData.splice(drag, numbRowMove));
-          
-          const a = data[hoveredRow.index].copyOf ? data[hoveredRow.index].numb + 1 : data[hoveredRow.index].numb;
+
+          const a = data[hoveredRow.index].copyOf
+            ? data[hoveredRow.index].numb + 1
+            : data[hoveredRow.index].numb;
           const b = data[draggingRow.index].numb;
 
           // Updating the picture order numbers
           let wasCopy = false;
 
           // Updates all of the numbers
-          for (let i = Math.min(a, b), max = Math.max(a, b), index = Math.min(drag, hover), maxIndex = data.length;
+          for (
+            let i = Math.min(a, b),
+              max = Math.max(a, b),
+              index = Math.min(drag, hover),
+              maxIndex = data.length;
             i <= max, index < maxIndex;
             i++, index++
           ) {
@@ -647,9 +702,10 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
         icon={<Add />}
         key="add"
         label="Create Copy"
-        disabled={ !!(row.original.hasCopy || row.original.copyOf) }
+        disabled={!!(row.original.hasCopy || row.original.copyOf)}
         onClick={() => {
-          createCopy(row.original)}}
+          createCopy(row.original);
+        }}
         table={table}
       />,
       <MRT_ActionMenuItem
@@ -661,10 +717,10 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
       />,
     ],
     renderBottomToolbarCustomActions: () => (
-      <Box sx={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+      <Box sx={{ display: "flex", gap: "1rem", alignItems: "center" }}>
         <Button
-          color='primary'
-          variant='contained'
+          color="primary"
+          variant="contained"
           onClick={() => {
             // Validates and sets the corresponding errors before generating the report
 
@@ -672,17 +728,23 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
             let newError = { ...error };
 
             if (data.length === 0) {
-              newError = { ...newError, numbEntry: 'add at least one photo' };
+              newError = { ...newError, numbEntry: "add at least one photo" };
               haveError = true;
             } else {
-              newError = { ...newError, numbEntry: '' };
+              newError = { ...newError, numbEntry: "" };
             }
 
             if (!localStorage.getItem("incidentNumb")) {
-              newError = { ...newError, 'incidentNumb': 'Please key in the incident number'};
+              newError = {
+                ...newError,
+                incidentNumb: "Please key in the incident number",
+              };
             }
-            if (!localStorage.getItem('location')) {
-              newError = { ...newError, 'location': "Please key in the location"};
+            if (!localStorage.getItem("location")) {
+              newError = {
+                ...newError,
+                location: "Please key in the location",
+              };
             }
 
             for (const value of Object.values(newError)) {
@@ -698,15 +760,15 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
             else generateReport(data);
           }}
         >
-          {'Generate Report'}
+          {"Generate Report"}
         </Button>
         <Button
-          color='error'
-          variant='contained'
+          color="error"
+          variant="contained"
           onClick={() => openDeleteConfirmModal(-1)}
           disabled={data.length == 0}
         >
-          {'Delete All'}
+          {"Delete All"}
         </Button>
       </Box>
     ),
@@ -723,9 +785,9 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
     muiDetailPanelProps: () => ({
       sx: (theme) => ({
         backgroundColor:
-          theme.palette.mode === 'dark'
-            ? 'rgba(255,210,244,0.1)'
-            : 'rgba(0,0,0,0.1)',
+          theme.palette.mode === "dark"
+            ? "rgba(255,210,244,0.1)"
+            : "rgba(0,0,0,0.1)",
       }),
     }),
     //conditionally render detail panel
@@ -733,14 +795,14 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
       !row.original.copyOf ? (
         <Box
           sx={{
-            display: 'flex',
-            margin: 'auto',
-            width: '96vw',
-            justifyContent: 'center',
-            alignItems: 'center',
+            display: "flex",
+            margin: "auto",
+            width: "96vw",
+            justifyContent: "center",
+            alignItems: "center",
           }}
         >
-          <img src={row.original.image.src} style={{'width' : '25%'}}></img>
+          <img src={row.original.image.src} style={{ width: "25%" }}></img>
         </Box>
       ) : null,
   });
@@ -764,7 +826,7 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
         handleDeleteAll={handleDeleteAll}
       />
     </>
-  )
-};
+  );
+}
 
 export default Table;

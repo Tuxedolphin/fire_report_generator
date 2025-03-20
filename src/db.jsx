@@ -35,7 +35,6 @@ export function addPhoto(photo) {
  * * < 0 -> Error
  */
 export async function updatePhoto(photo) {
-
   try {
     const status = await db.photos.update(photo.id, {
       numb: photo.numb,
@@ -90,7 +89,7 @@ export async function clearAll() {
 
 /**
  * Retrieves a specific photo based on the database ID
- * @param {number} id 
+ * @param {number} id
  * @returns {Photo | null} The photo object if there is one matching the id, or null if there isn't.
  */
 export async function retrievePhoto(id) {
