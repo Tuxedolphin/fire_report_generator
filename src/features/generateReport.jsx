@@ -25,7 +25,7 @@ function updateBasicConstants() {
   if (!postalCode) {
     postalCodeLine = "";
   } else {
-    postalCodeLine = `                                   SINGAPORE ${postalCode}`;
+    postalCodeLine = `                                   SINGAPORE ${postalCode}`; // Extra white space for formatting
   }
 }
 
@@ -60,7 +60,7 @@ function getAspectRatio(image) {
 }
 
 /**
- * Creates a new pptxgen object and formats its basic values
+ * Creates a new pptxgenjs object and formats its basic values
  */
 function formatPptx() {
   pptx = new pptxgen();
