@@ -1,9 +1,9 @@
 import { useState } from "react";
 import "./App.css";
-import Table from "./Table.jsx";
-import StoragePopup from "./PersistentStoragePopup.jsx";
-import Menu from "./Menu.jsx";
-import Snackbars from "./Snackbars.jsx";
+import Table from "./components/Table.jsx";
+import StoragePopup from "./components/PersistentStoragePopup.jsx";
+import Menu from "./components/Menu.jsx";
+import Snackbars from "./components/Snackbars.jsx";
 
 function App() {
   const [clearAll, setClearAll] = useState(false);

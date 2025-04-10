@@ -5,8 +5,10 @@ import {
   Box,
   TextField,
   InputAdornment,
-  Switch,
   Stack,
+  ToggleButtonGroup,
+  ToggleButton,
+  Paper,
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 
@@ -196,26 +198,55 @@ function Menu({ clearAll, setClearAll, error, setError }) {
           />
         </Grid>
         <Grid size={4} sx={{ alignItems: "center" }}>
-          <Typography sx={{ alignItems: "center" }}>Report Type:</Typography>
-          <Stack
-            direction="row"
-            spacing={1}
+          <ToggleButtonGroup
+            exclusive
+            value={c1acc ? "c1acc" : "full"}
+            onChange={(_, newValue) => {
+              if (newValue !== null) {
+                const newState = newValue === "c1acc";
+                setC1acc(newState);
+                localStorage.setItem("c1acc", JSON.stringify(newState));
+              }
+            }}
+            aria-label="Report Type"
+            size="small"
+            color="primary"
             sx={{
-              justifyContent: "center",
-              alignItems: "center",
               width: "100%",
+              mt: 1,
+              "& .MuiToggleButton-root": {
+                border: "0px solid transparent",
+                borderBottom: "1px solid rgba(0, 0, 0, 0.42)",
+                borderRadius: 0,
+                textTransform: "none",
+                color: "rgba(0, 0, 0, 0.6)",
+                "&.Mui-selected": {
+                  backgroundColor: "transparent",
+                  color: "primary.main",
+                  borderBottom: "2px solid",
+                  borderColor: "primary.main",
+                },
+                "&:hover": {
+                  backgroundColor: "rgba(0, 0, 0, 0.04)",
+                },
+              },
             }}
           >
-            <Typography>Full Report</Typography>
-            <Switch
-              checked={c1acc}
-              onChange={() => {
-                setC1acc(!c1acc);
-                localStorage.setItem("c1acc", JSON.stringify(!c1acc));
-              }}
-            />
-            <Typography>C1 Accidental Report</Typography>
-          </Stack>
+            <ToggleButton
+              value="full"
+              aria-label="Full Report"
+              sx={{ width: "50%" }}
+            >
+              Full Report
+            </ToggleButton>
+            <ToggleButton
+              value="c1acc"
+              aria-label="C1 Accidental Report"
+              sx={{ width: "50%" }}
+            >
+              C1 Accidental
+            </ToggleButton>
+          </ToggleButtonGroup>
         </Grid>
         <Grid size={8}>
           <TextField

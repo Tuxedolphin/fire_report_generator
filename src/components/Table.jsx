@@ -86,6 +86,10 @@ function DeleteConfirmDialog({
     setData(newData);
   };
 
+  // Get the photo to be deleted for preview
+  const photoToDelete = deleteId > 0 ? data[deleteId] : null;
+  const isDeletingAll = deleteId < 0;
+
   return (
     <>
       <Dialog
@@ -93,18 +97,100 @@ function DeleteConfirmDialog({
         onClose={handleClose}
         aria-labelledby="alert-dialog-title"
         aria-describedby="alert-dialog-description"
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: "8px",
+              minWidth: photoToDelete ? "400px" : "360px",
+              overflow: "hidden",
+            },
+          },
+        }}
       >
-        <DialogTitle id="alert-dialog-title">
-          {`Permanently delete ${deleteId > 0 ? "photo" : "all"}?`}
+        <DialogTitle
+          id="alert-dialog-title"
+          sx={{
+            bgcolor: "error.main",
+            color: "white",
+            py: 1.5,
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            fontWeight: 500,
+          }}
+        >
+          <Delete fontSize="small" />
+          {`${isDeletingAll ? "Delete All Photos" : "Delete Photo"}`}
         </DialogTitle>
-        <DialogContent>
-          <DialogContentText id="alert-dialog-description">
-            Do you really want to delete{" "}
-            {deleteId < 0 ? "all the photos" : "the photo"}? This process cannot
-            be undone.
+        <DialogContent sx={{ pt: 2.5, pb: 2, px: 3 }}>
+          <DialogContentText
+            id="alert-dialog-description"
+            sx={{
+              my: 2,
+              color: "text.primary",
+              fontWeight: isDeletingAll ? 500 : 400,
+            }}
+          >
+            {`Are you sure you want to delete ${
+              isDeletingAll ? "all photos" : "this photo"
+            }? This process cannot be undone.`}
           </DialogContentText>
+
+          {photoToDelete && (
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+              }}
+            >
+              <Box
+                sx={{
+                  width: "100%",
+                  display: "flex",
+                  justifyContent: "center",
+                  overflow: "hidden",
+                  borderRadius: "8px",
+                  boxShadow: "0 1px 4px rgba(0, 0, 0, 0.1)",
+                }}
+              >
+                <img
+                  src={photoToDelete.image.src}
+                  alt="Photo to be deleted"
+                  style={{
+                    maxWidth: "100%",
+                    maxHeight: "200px",
+                    objectFit: "contain",
+                    borderRadius: "6px",
+                    transition: "transform 0.3s ease",
+                  }}
+                />
+              </Box>
+              {photoToDelete.photoNumb && (
+                <Typography
+                  variant="body2"
+                  sx={{
+                    mt: 1.5,
+                    fontWeight: 500,
+                    color: "text.primary",
+                    textAlign: "center",
+                  }}
+                >
+                  {photoToDelete.photoNumb}
+                </Typography>
+              )}
+            </Box>
+          )}
         </DialogContent>
-        <DialogActions>
+        <DialogActions
+          sx={{
+            px: 2.5,
+            pb: 2,
+            pt: 1,
+            borderTop: "1px solid rgba(0, 0, 0, 0.06)",
+            bgcolor: "rgba(0, 0, 0, 0.02)",
+          }}
+        >
           <Button onClick={handleClose}>Cancel</Button>
           <Button
             onClick={() => {
@@ -118,8 +204,10 @@ function DeleteConfirmDialog({
             }}
             autoFocus
             color="error"
+            variant="contained"
+            startIcon={<Delete />}
           >
-            Delete
+            {isDeletingAll ? "Delete All" : "Delete"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -144,6 +232,7 @@ function AddPhotoForm({ openAddForm, setOpenAddForm, data, setData }) {
   const [status, setStatus] = useState("");
   const [validFile, setValidFile] = useState("");
   const [disableButton, setDisableButton] = useState(true);
+  const [imagePreview, setImagePreview] = useState("");
 
   /**
    * Check for file validity, making sure that there is a file and it is of the correct type.
@@ -155,6 +244,8 @@ function AddPhotoForm({ openAddForm, setOpenAddForm, data, setData }) {
       setValidFile("error");
       setStatus("File could not be uploaded.");
       setDisableButton(true);
+      setImagePreview("");
+      return false;
     }
 
     let parts = file["name"].split(".");
@@ -166,11 +257,16 @@ function AddPhotoForm({ openAddForm, setOpenAddForm, data, setData }) {
       setValidFile("error");
       setStatus(`File "${file["name"]}" has invalid file format.`);
       setDisableButton(true);
+      setImagePreview("");
       return false;
     } else {
       setValidFile("success");
       setStatus(`File "${file["name"]}" uploaded`);
       setDisableButton(false);
+
+      // Create preview URL for the image
+      const url = URL.createObjectURL(file);
+      setImagePreview(url);
       return true;
     }
   };
@@ -195,14 +291,14 @@ function AddPhotoForm({ openAddForm, setOpenAddForm, data, setData }) {
     setDisableButton(true);
     setStatus("");
     setValidFile("");
+    setImagePreview("");
     setOpenAddForm(false);
   };
-
-  return (
-    <Dialog
-      open={openAddForm}
-      onClose={handleClose}
-      PaperProps={{
+  <Dialog
+    open={openAddForm}
+    onClose={handleClose}
+    slotProps={{
+      paper: {
         component: "form",
         onSubmit: (event) => {
           event.preventDefault();
@@ -224,65 +320,116 @@ function AddPhotoForm({ openAddForm, setOpenAddForm, data, setData }) {
 
           handleClose();
         },
+        sx: {
+          borderRadius: "8px",
+          overflow: "hidden",
+        },
+      },
+    }}
+    fullWidth
+    maxWidth="sm"
+  >
+    <DialogTitle
+      sx={{
+        bgcolor: "primary.main",
+        color: "white",
+        py: 1.5,
+        display: "flex",
+        alignItems: "center",
+        gap: 1,
       }}
-      fullWidth
     >
-      <DialogTitle>Add Photo</DialogTitle>
-      <DialogContent>
-        <TextField
-          autoFocus
-          id="photoNumb"
-          name="photoNumb"
-          required
-          margin="dense"
-          label="Photo Number"
-          variant="standard"
-          type="text"
-          autoComplete="off"
-          fullWidth
+      <CloudUpload fontSize="small" />
+      Add Photo
+    </DialogTitle>
+    <DialogContent sx={{ pt: 3, pb: 2 }}>
+      <TextField
+        autoFocus
+        id="photoNumb"
+        name="photoNumb"
+        required
+        margin="dense"
+        label="Photo Number"
+        variant="outlined"
+        type="text"
+        autoComplete="off"
+        fullWidth
+        sx={{ mb: 2 }}
+      />
+      <TextField
+        id="description"
+        name="description"
+        margin="dense"
+        label="Description"
+        variant="standard"
+        type="text"
+        autoComplete="off"
+        fullWidth
+        multiline
+      />
+      <Button
+        component="label"
+        role={undefined}
+        variant="contained"
+        tabIndex={-1}
+        startIcon={<CloudUpload />}
+        sx={{ marginTop: "8px", marginBottom: "4px" }}
+      >
+        Upload file
+        <VisuallyHiddenInput
+          type="file"
+          accept="image/*"
+          onChange={(event) => {
+            try {
+              handleFile(event.target.files[0]);
+            } catch (error) {
+              console.log(error);
+              handleFile(null);
+            }
+          }}
         />
-        <TextField
-          id="description"
-          name="description"
-          margin="dense"
-          label="Description"
-          variant="standard"
-          type="text"
-          autoComplete="off"
-          fullWidth
-          multiline
-        />
-        <Button
-          component="label"
-          role={undefined}
-          variant="contained"
-          tabIndex={-1}
-          startIcon={<CloudUpload />}
-          sx={{ marginTop: "8px", marginBottom: "4px" }}
+      </Button>
+      <Typography color={validFile}> {status} </Typography>
+
+      {imagePreview && (
+        <Box
+          sx={{
+            mt: 2,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            border: "1px solid #eee",
+            borderRadius: "4px",
+            padding: "8px",
+          }}
         >
-          Upload file
-          <VisuallyHiddenInput
-            type="file"
-            onChange={(event) => {
-              try {
-                handleFile(event.target.files[0]);
-              } catch (error) {
-                console.log(error);
-                handleFile(null);
-              }
+          <Typography variant="subtitle2" sx={{ mb: 1 }}>
+            Image Preview
+          </Typography>
+          <img
+            src={imagePreview}
+            alt="Preview"
+            style={{
+              maxWidth: "100%",
+              maxHeight: "200px",
+              objectFit: "contain",
             }}
           />
-        </Button>
-        <Typography color={validFile}> {status} </Typography>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={handleClose}>Cancel</Button>
-        <Button type="submit" disabled={disableButton}>
-          Submit
-        </Button>
-      </DialogActions>
-    </Dialog>
-  );
+        </Box>
+      )}
+    </DialogContent>
+    <DialogActions>
+      <Button onClick={handleClose}>Cancel</Button>
+      <Button
+        type="submit"
+        disabled={disableButton}
+        variant="contained"
+        color="primary"
+      >
+        Submit
+      </Button>
+    </DialogActions>
+  </Dialog>;
 }
 
 Table.propTypes = {
@@ -301,7 +448,6 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
   const [data, setData] = useState([]);
   const [pagination, setPagination] = useState({});
   const [validPhotoNumb, setValidPhotoNumb] = useState("");
-
   const [openAddForm, setOpenAddForm] = useState(false); // Holds if add photo form should be opened
   const [openDelete, setOpenDelete] = useState(false); // Holds if delete photo modal should be opened
   const [deleteId, setDeleteId] = useState(0); // Holds if need to delete all and the index of what to delete
@@ -353,7 +499,6 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
       if (photo[columnID] == newValue) return;
 
       let newData = [...data];
-
       newData[index][columnID] = newValue;
       updatePhoto(newData[index]);
 
@@ -362,7 +507,6 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
         newData[index][columnID] = newValue;
         updatePhoto(newData[index]);
       }
-
       setData(newData);
     },
     [data]
@@ -400,9 +544,9 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
               updateCell(
                 cell.column.id,
                 row.original,
-                +row.id,
+                +row.id, // Row.id is a string, need to convert to number
                 event.target.value
-              ); // Row.id is a string, need to convert to number
+              );
           },
         }),
       },
@@ -418,7 +562,7 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
             updateCell(
               cell.column.id,
               row.original,
-              +row.id,
+              +row.id, // Row.id is a string, need to convert to number
               event.target.value
             );
           },
@@ -433,9 +577,7 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
     let newCopy = image.createCopy();
     addPhoto(newCopy).then((newId) => {
       newCopy.id = newId;
-
       const originalIndex = data.indexOf(image);
-
       let newData = [...data];
       newData[originalIndex].hasCopy = newId;
       updatePhoto(image);
@@ -455,7 +597,6 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
     if (!deleteId) {
       deleteId = data.indexOf(row.original);
     }
-
     setDeleteId(deleteId);
     setOpenDelete(true);
   };
@@ -542,23 +683,23 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
       // Handles what happens when a row is dragged to anther row, such as updating the numbers and data array
       onDragEnd: () => {
         const { draggingRow, hoveredRow } = table.getState();
-
         if (hoveredRow && draggingRow) {
           if (hoveredRow === draggingRow) return;
 
-          if (data[hoveredRow.index].numb === data[draggingRow.index].numb)
+          if (data[hoveredRow.index].numb === data[draggingRow.index].numb) {
             return;
+          }
 
           let drag = draggingRow.index;
           let hover = hoveredRow.index;
 
           let newData = [...data];
           let numbRowMove = 1;
-          // If it has a copy, need to move the very next object as well.
+          // If it has a copy, need to move the very next object as well
           if (data[draggingRow.index].hasCopy) {
             numbRowMove = 2;
           }
-          // If it is a copy, need to move the previous object as well.
+          // If it is a copy, need to move the previous object as well
           else if (data[draggingRow.index].copyOf) {
             numbRowMove = 2;
             drag--;
@@ -648,7 +789,6 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
           variant="contained"
           onClick={() => {
             // Validates and sets the corresponding errors before generating the report
-
             let haveError = false;
             let newError = { ...error };
 
@@ -665,6 +805,7 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
                 incidentNumb: "Please key in the incident number",
               };
             }
+
             if (!localStorage.getItem("location")) {
               newError = {
                 ...newError,
@@ -715,20 +856,21 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
             : "rgba(0,0,0,0.1)",
       }),
     }),
-    //conditionally render detail panel
     renderDetailPanel: ({ row }) =>
       !row.original.copyOf ? (
-        <Box
-          sx={{
-            display: "flex",
-            margin: "auto",
-            width: "96vw",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <img src={row.original.image.src} style={{ width: "25%" }}></img>
-        </Box>
+        <>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              width: "96vw",
+              margin: "auto",
+            }}
+          >
+            <img src={row.original.image.src} style={{ width: "25%" }}></img>
+          </Box>
+        </>
       ) : null,
   });
 
@@ -736,10 +878,10 @@ function Table({ error, setError, setClearAll, setCreateStack }) {
     <>
       <MaterialReactTable table={table} />
       <AddPhotoForm
-        data={data}
-        setData={setData}
         openAddForm={openAddForm}
         setOpenAddForm={setOpenAddForm}
+        data={data}
+        setData={setData}
       />
       <DeleteConfirmDialog
         open={openDelete}
